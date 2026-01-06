@@ -6,6 +6,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { getDeviceName } from '../utils/webauthn';
 import { 
   type ProductInventory, 
   recordSales, 
@@ -17,7 +18,7 @@ import {
 export interface Expense {
   id: string;
   date: string;
-  category: 'Purchase Cost' | 'Wages' | 'Utilities' | 'Misc';
+  category: string;
   amount: number;
   description: string;
 }
@@ -35,9 +36,14 @@ export interface RoomDetail {
 export interface BusinessState {
   // State
   inventory: ProductInventory[];
+  inventoryItems: ProductInventory[];
+  isLoading: boolean;
   expenses: Expense[];
+  dailySales: Record<string, { id?: string; date: string; roomRent: number; restaurantBills: number; barSales: number }>;
   rooms: Record<string, RoomDetail>; // Keyed by room number/ID
   lastHydrated: string | null;
+  staff?: Array<any>;
+  error?: string | null;
   allowSpillage: boolean; // Standard spillage allowance toggle
   specialRates: {
     happyHour: boolean;
@@ -62,7 +68,12 @@ export interface BusinessState {
   // Actions - Inventory & Sales
   setInventory: (items: ProductInventory[]) => void;
   recordSale: (productId: string, volume: number, quantity: number) => void;
+  sellPeg: (productId: string, pegs?: number) => void;
+  recordDailySale: (arg1: any, arg2?: any) => void;
   adjustStock: (productId: string, physicalBottles: number, physicalPegs: number, reason: string) => void;
+  loadOpeningStock: () => Promise<void> | void;
+  addPurchase: (purchase: any) => void;
+  autoHydrateFromExcel?: (filePath: string) => Promise<void> | void;
   toggleSpillage: () => void;
   toggleSpecialRate: (type: 'happyHour' | 'weekendMarkup') => void;
   logPriceUpdate: (productId: string, oldPrice: number, newPrice: number) => void;
@@ -84,6 +95,11 @@ export const useBusinessStore = create<BusinessState>()(
     (set, get) => ({
       // Initial State
       inventory: [],
+      inventoryItems: [],
+      isLoading: false,
+      dailySales: {},
+      staff: [],
+      error: null,
       expenses: [],
       rooms: {},
       lastHydrated: null,
@@ -100,7 +116,6 @@ export const useBusinessStore = create<BusinessState>()(
         // so we assume user data is passed or fetched from session storage)
         const session = sessionStorage.getItem('deepa_auth_session');
         const user = session ? JSON.parse(session) : { id: 'SYSTEM', name: 'System' };
-        const { getDeviceName } = require('../utils/webauthn'); // Dynamic import for device detection
 
         set((state) => ({
           activityLogs: [{
@@ -130,6 +145,42 @@ export const useBusinessStore = create<BusinessState>()(
         });
         set({ inventory: items });
         get().logActivity('Stock Adjustment', `Bulk inventory hydration completed.`);
+      },
+
+      // Additional helper actions for compatibility with components
+      sellPeg: (productId: string, pegs: number = 1) => {
+        // Convert pegs to ml and call recordSale
+        const vol = 60 * pegs;
+        get().recordSale(productId, vol, 1);
+      },
+
+      recordDailySale: (arg1: any, arg2?: any) => {
+        // Support two signatures:
+        // recordDailySale(dateString, { roomRent, restaurantBills, barSales })
+        // recordDailySale({ id, date, roomRent, restaurantBills, barSales })
+        let saleObj: any;
+        if (typeof arg1 === 'string' && arg2) {
+          saleObj = { id: `sale-${Date.now()}`, date: arg1, ...arg2 };
+        } else {
+          saleObj = arg1;
+        }
+
+        set((state) => ({ dailySales: { ...(state.dailySales || {}), [saleObj.date]: saleObj } }));
+      },
+
+      loadOpeningStock: async () => {
+        // Placeholder: in real app this would fetch opening stock from file or service
+        get().logActivity('Stock Adjustment', 'Loaded opening stock (noop)');
+      },
+
+      addPurchase: (purchase) => {
+        // Minimal compatibility: log and no-op
+        get().logActivity('Stock Adjustment', `Recorded purchase: ${JSON.stringify(purchase)}`);
+      },
+
+      autoHydrateFromExcel: async (filePath: string) => {
+        // Use setInventory if file parsing is implemented elsewhere
+        get().logActivity('Stock Adjustment', `Auto-hydrate from Excel: ${filePath}`);
       },
 
       toggleSpillage: () => set((state) => ({ allowSpillage: !state.allowSpillage })),

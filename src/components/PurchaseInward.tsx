@@ -182,7 +182,7 @@ export default function PurchaseInward() {
 
         // Only add if we have essential data
         if (brandName && volumeStr && caseCount > 0) {
-          const volume = parseBottleSize(volumeStr);
+          const volume = parseBottleSize(volumeStr as string | number);
           if (volume) {
             const brand = extractBrandName(String(brandName));
             const config = getLiquorConfig(volume, false);
@@ -487,11 +487,11 @@ export default function PurchaseInward() {
                 <span className="text-hotel-forest/60">Supplier:</span>
                 <p className="text-hotel-forest font-medium">{parsedInvoice.supplier}</p>
               </div>
-              {parsedInvoice.totalAmount > 0 && (
+              {(parsedInvoice.totalAmount ?? 0) > 0 && (
                 <div className="md:col-span-3">
                   <span className="text-hotel-forest/60">Total Amount:</span>
                   <p className="text-hotel-forest font-bold text-lg">
-                    {formatCurrency(parsedInvoice.totalAmount)}
+                    {formatCurrency(parsedInvoice.totalAmount ?? 0)}
                   </p>
                 </div>
               )}

@@ -14,7 +14,8 @@ import {
   FileText,
   Save,
   User,
-  ShieldAlert
+  ShieldAlert,
+  Calculator,
 } from 'lucide-react';
 import { useBusinessStore } from '../store/useBusinessStore';
 import { formatNumber } from '../utils/formatCurrency';

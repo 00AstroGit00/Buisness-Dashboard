@@ -5,14 +5,22 @@
  */
 
 import { useState, useMemo, useCallback, Profiler } from 'react';
-import { FixedSizeGrid as Grid } from 'react-window';
-import { 
-  Package, 
-  Search, 
-  Plus, 
-  AlertTriangle, 
+import { FixedSizeGrid } from '../libs/reactWindowShim';
+import {
+  Package,
+  Search,
+  Plus,
+  AlertTriangle,
   Database,
   Loader2,
+  PlusCircle,
+  MinusCircle,
+  ShoppingCart,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  Filter,
+  MoreVertical
 } from 'lucide-react';
 import { useBusinessStore } from '../store/useBusinessStore';
 import { useSystemMonitor } from './SystemMonitor';
@@ -33,14 +41,22 @@ export default function Inventory() {
   const { onRenderCallback } = useSystemMonitor();
   const { recordRealtimeSale } = useRealtimeSync();
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   // --- 1. Memoized Search & Filter (Prevent CPU spikes) ---
   const filteredItems = useMemo(() => {
     const q = search.toLowerCase();
-    return inventory.filter(item => 
+    let filtered = inventory.filter(item =>
       item.productName.toLowerCase().includes(q)
-    ).sort((a, b) => a.productName.localeCompare(b.productName));
-  }, [inventory, search]);
+    );
+
+    // Apply category filter if needed
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(item => item.category?.toLowerCase() === selectedCategory);
+    }
+
+    return filtered.sort((a, b) => a.productName.localeCompare(b.productName));
+  }, [inventory, search, selectedCategory]);
 
   // --- 2. Grid Configuration (Responsive Logic) ---
   const getGridConfig = () => {
@@ -66,7 +82,7 @@ export default function Inventory() {
     const handleSaleAction = (type: 'peg' | 'bottle') => {
       const vol = type === 'peg' ? 60 : item.config.mlPerBottle;
       recordSale(item.productName, vol, 1);
-      
+
       // Real-time broadcast for S23 Ultra -> HP Laptop sync
       recordRealtimeSale({
         type: 'STOCK_UPDATE',
@@ -78,9 +94,9 @@ export default function Inventory() {
 
     return (
       <div style={{ ...style, padding: '8px' }}>
-        <InventoryCard 
-          item={item} 
-          onSale={handleSaleAction} 
+        <InventoryCard
+          item={item}
+          onSale={handleSaleAction}
         />
       </div>
     );
@@ -90,7 +106,7 @@ export default function Inventory() {
     return (
       <div className="h-96 flex flex-col items-center justify-center text-forest-green">
         <Loader2 className="animate-spin mb-4" size={48} />
-        <p className="font-bold uppercase tracking-widest">Virtualized Stock Init...</p>
+        <p className="font-bold uppercase tracking-widest">Loading Inventory...</p>
       </div>
     );
   }
@@ -98,24 +114,51 @@ export default function Inventory() {
   return (
     <Profiler id="Inventory" onRender={onRenderCallback}>
       <div className="space-y-6 pb-24 h-screen flex flex-col overflow-hidden">
-        {/* Sticky Header */}
+        {/* Header with Filters */}
         <div className="flex-shrink-0 space-y-4 pt-4">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-2xl font-black text-forest-green flex items-center gap-2">
-              <Package className="text-brushed-gold" size={28} />
-              Bar Counter
-            </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-2">
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-forest-green flex items-center gap-2">
+                <Package className="text-brushed-gold" size={24} />
+                Inventory Management
+              </h2>
+              <span className="bg-brushed-gold text-forest-green text-xs font-bold px-2 py-1 rounded-full">
+                {filteredItems.length} items
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-forest-green bg-white focus:outline-none focus:ring-2 focus:ring-forest-green focus:border-transparent"
+              >
+                <option value="all">All Categories</option>
+                <option value="IMFL">IMFL</option>
+                <option value="beer">Beer</option>
+                <option value="wine">Wine</option>
+                <option value="spirits">Spirits</option>
+              </select>
+
+              <button className="px-3 py-2 bg-forest-green text-brushed-gold rounded-lg text-sm font-medium hover:bg-forest-green-dark transition-colors flex items-center gap-1">
+                <Plus size={16} />
+                <span>Add Item</span>
+              </button>
+            </div>
           </div>
 
+          {/* Search Bar */}
           <div className="relative px-2">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-forest-green/50" size={20} />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-forest-green/50">
+              <Search size={20} />
+            </div>
             <input
               autoFocus
               type="text"
-              placeholder="Search Brand..."
+              placeholder="Search products, brands, categories..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-14 pr-4 py-4 text-lg font-bold border-2 border-forest-green/20 rounded-2xl focus:border-forest-green outline-none shadow-sm transition-all bg-white"
+              className="w-full pl-12 pr-4 py-3 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-forest-green focus:border-transparent shadow-sm transition-all bg-white"
             />
           </div>
         </div>
@@ -123,22 +166,52 @@ export default function Inventory() {
         {/* Virtualized Grid */}
         <div className="flex-1 overflow-hidden px-2">
           {filteredItems.length === 0 ? (
-            <div className="bg-white rounded-2xl border-2 border-dashed border-forest-green/20 p-20 text-center">
+            <div className="bg-white rounded-2xl border-2 border-dashed border-forest-green/20 p-12 text-center">
               <Database className="mx-auto text-forest-green/10 mb-4" size={64} />
-              <h3 className="text-xl font-bold text-forest-green/40">Empty Stock Room</h3>
+              <h3 className="text-xl font-bold text-forest-green/40 mb-2">No Inventory Found</h3>
+              <p className="text-forest-green/60 mb-4">Try adjusting your search or category filter</p>
+              <button className="px-4 py-2 bg-forest-green text-brushed-gold rounded-lg hover:bg-forest-green-dark transition-colors text-sm font-medium">
+                Add New Item
+              </button>
             </div>
           ) : (
-            <Grid
-              columnCount={columns}
-              columnWidth={columnWidth}
-              height={window.innerHeight - 300}
-              rowCount={rowCount}
-              rowHeight={260}
-              width={width}
-              className="scrollbar-hide"
-            >
-              {Cell}
-            </Grid>
+            (() => {
+              const Grid = FixedSizeGrid;
+              if (Grid) {
+                return (
+                  <Grid
+                    columnCount={columns}
+                    columnWidth={columnWidth}
+                    height={window.innerHeight - 300}
+                    rowCount={rowCount}
+                    rowHeight={280}
+                    width={width}
+                    className="scrollbar-hide"
+                  >
+                    {Cell}
+                  </Grid>
+                );
+              }
+
+              // Fallback: simple CSS grid when FixedSizeGrid isn't available
+              return (
+                <div
+                  className={`grid gap-4`}
+                  style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, maxHeight: window.innerHeight - 300, overflow: 'auto' }}
+                >
+                  {filteredItems.map((item, idx) => (
+                    <div key={`${item.productName}-${item.config.size}-${idx}`} style={{ padding: 8 }}>
+                      <InventoryCard item={item} onSale={(t) => {
+                        // reuse recordSale behavior
+                        const vol = t === 'peg' ? 60 : item.config.mlPerBottle;
+                        recordSale(item.productName, vol, 1);
+                        recordRealtimeSale({ type: 'STOCK_UPDATE', productId: item.productName, saleType: t, timestamp: Date.now() });
+                      }} />
+                    </div>
+                  ))}
+                </div>
+              );
+            })()
           )}
         </div>
       </div>
@@ -150,48 +223,92 @@ export default function Inventory() {
 
 function InventoryCard({ item, onSale }: { item: any; onSale: (type: 'peg' | 'bottle') => void }) {
   const isLowStock = item.currentStock.totalBottles < 3;
-  const remainingPercent = useMemo(() => 
-    (item.remainingVolumeInCurrentBottle / item.config.mlPerBottle) * 100, 
+  const remainingPercent = useMemo(() =>
+    (item.remainingVolumeInCurrentBottle / item.config.mlPerBottle) * 100,
     [item.remainingVolumeInCurrentBottle, item.config.mlPerBottle]
   );
 
   return (
     <div className={`
-      relative bg-white h-full rounded-2xl overflow-hidden shadow-md border-2 transition-all
-      ${isLowStock ? 'border-orange-400 bg-orange-50/10' : 'border-forest-green/5'}
+      relative bg-white h-full rounded-2xl overflow-hidden shadow-lg border transition-all hover:shadow-xl
+      ${isLowStock ? 'border-red-400 bg-red-50/30' : 'border-gray-200'}
     `}>
-      <div className="bg-forest-green p-4 flex justify-between items-center">
-        <div className="max-w-[70%]">
-          <h3 className="text-white font-black text-sm uppercase truncate">{item.productName.split(' ').slice(0, -1).join(' ')}</h3>
-          <span className="text-[10px] font-black text-brushed-gold uppercase">{item.config.size}ml</span>
+      {/* Card Header */}
+      <div className="bg-gradient-to-r from-forest-green to-forest-green-light p-4 flex justify-between items-center">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-white font-bold text-base truncate">{item.productName.split(' ').slice(0, -1).join(' ')}</h3>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[10px] font-bold text-brushed-gold uppercase bg-white/20 px-2 py-1 rounded-full">
+              {item.config.size}ml
+            </span>
+            <span className="text-[10px] font-medium text-white/80 bg-black/10 px-2 py-1 rounded-full">
+              {item.category || 'N/A'}
+            </span>
+          </div>
         </div>
-        {isLowStock && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-1 rounded-full animate-pulse">LOW</div>}
+        <button className="p-1 text-white/70 hover:text-white">
+          <MoreVertical size={16} />
+        </button>
       </div>
 
+      {/* Card Body */}
       <div className="p-4 flex flex-col justify-between h-[calc(100%-60px)]">
-        <div className="flex justify-between items-end">
+        {/* Stock Info */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs font-medium text-forest-green/60 uppercase tracking-wider">Bottles</p>
+              <p className="text-xl font-bold text-forest-green mt-1">{item.currentStock.totalBottles}</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs font-medium text-forest-green/60 uppercase tracking-wider">Pegs</p>
+              <p className="text-xl font-bold text-brushed-gold mt-1">{item.currentStock.loosePegs.toFixed(1)}</p>
+            </div>
+          </div>
+
+          {/* Stock Level Indicator */}
           <div className="space-y-1">
-            <p className="text-[9px] font-black text-forest-green/40 uppercase">Stock</p>
-            <p className="text-2xl font-black text-forest-green leading-none">{item.currentStock.totalBottles}</p>
-          </div>
-          <div className="text-right space-y-1">
-            <p className="text-[9px] font-black text-forest-green/40 uppercase tracking-widest">Pegs</p>
-            <p className="text-lg font-black text-brushed-gold leading-none">{item.currentStock.loosePegs.toFixed(1)}</p>
+            <div className="flex justify-between text-xs">
+              <span className="text-forest-green/60">Stock Level</span>
+              <span className="text-forest-green font-medium">{Math.round(remainingPercent)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all duration-700 ${
+                  remainingPercent > 50 ? 'bg-green-500' :
+                  remainingPercent > 20 ? 'bg-yellow-500' : 'bg-red-500'
+                }`}
+                style={{ width: `${remainingPercent}%` }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden my-4">
-          <div className="h-full bg-brushed-gold transition-all duration-700" style={{ width: `${remainingPercent}%` }} />
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          <button
+            onClick={() => onSale('bottle')}
+            className="py-3 bg-gray-100 hover:bg-gray-200 text-forest-green rounded-xl font-medium text-sm transition-all active:scale-95 touch-manipulation flex items-center justify-center gap-1"
+          >
+            <MinusCircle size={16} />
+            <span>1 Bottle</span>
+          </button>
+          <button
+            onClick={() => onSale('peg')}
+            className="py-3 bg-gradient-to-r from-brushed-gold to-brushed-gold-light hover:from-brushed-gold-light hover:to-brushed-gold text-forest-green rounded-xl font-medium text-sm transition-all active:scale-95 touch-manipulation flex items-center justify-center gap-1 shadow-md"
+          >
+            <ShoppingCart size={16} />
+            <span>1 Peg</span>
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => onSale('bottle')} className="py-3 bg-gray-50 text-forest-green rounded-xl font-black text-[10px] uppercase hover:bg-gray-100 transition-all active:scale-95 touch-manipulation">
-            +1 Btl
-          </button>
-          <button onClick={() => onSale('peg')} className="py-3 bg-brushed-gold text-forest-green rounded-xl font-black text-[10px] uppercase shadow-md hover:bg-brushed-gold-light transition-all active:scale-95 touch-manipulation">
-            +60ml
-          </button>
-        </div>
+        {/* Low Stock Warning */}
+        {isLowStock && (
+          <div className="mt-3 flex items-center gap-2 p-2 bg-red-100 border border-red-200 rounded-lg">
+            <AlertTriangle size={16} className="text-red-600 flex-shrink-0" />
+            <span className="text-xs text-red-700 font-medium">Low Stock - Reorder Recommended</span>
+          </div>
+        )}
       </div>
     </div>
   );

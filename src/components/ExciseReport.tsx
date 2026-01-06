@@ -69,7 +69,7 @@ export default function ExciseReport() {
 
         const downloadPDF = () => {
 
-          const doc = jsPDF();
+          const doc = new jsPDF();
 
           const pageWidth = doc.internal.pageSize.getWidth();
 

@@ -1,7 +1,53 @@
-.brand-color-dot{display:inline-block;width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.brand-color-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
-/* Small helper to ensure embedded charts and placeholders look fine */
-.chart-placeholder{height:300px;display:flex;align-items:center;justify-content:center;color:#0a3d31}
+/* Improved chart styling */
+.chart-container {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a3d31;
+}
 
-/* Minimal responsive tweaks */
-@media (max-width:640px){.chart-placeholder{height:220px}}
+/* Responsive chart adjustments */
+@media (max-width: 640px) {
+  .chart-container {
+    height: 220px;
+  }
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Improved privacy mode toggle */
+.privacy-toggle {
+  transition: all 0.3s ease;
+}
+
+.privacy-toggle:hover {
+  transform: scale(1.02);
+}
+
+/* Better spacing for mobile */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    gap: 1rem;
+  }
+
+  .card-padding {
+    padding: 1rem;
+  }
+}

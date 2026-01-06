@@ -18,6 +18,7 @@ import {
   Clock,
   BarChart3,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { useSystemHeartbeat } from '../hooks/useSystemHeartbeat';
 import {
@@ -46,6 +47,7 @@ export default function MaintenanceDashboard() {
   const [cleanupReport, setCleanupReport] = useState(() => getCleanupRecommendations());
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [isPerformingMaint, setIsPerformingMaint] = useState(false);
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(() => getCachedUpdates());
   
   // ... existing code ...
@@ -64,35 +66,36 @@ export default function MaintenanceDashboard() {
 
   
   // Calculate growth metrics
+  const { dailySales, expenses, inventory } = useStore();
+
   const growthMetrics = useMemo(() => {
-    const totalPegsSold = transactionHistory.getAllTransactions()
-      .filter(t => t.type === 'sale')
-      .reduce((sum, t) => sum + t.pegsSold, 0);
-    
-    const totalGuests = dailySales.reduce((sum, sale) => {
+    const allTx = transactionHistory.getAllTransactions();
+    const totalPegsSold = allTx.filter(t => t.type === 'sale').reduce((sum, t) => sum + (t.quantity || 0), 0);
+
+    const totalGuests = (dailySales || []).reduce((sum, sale) => {
       // Estimate guests from room rent (assuming avg ₹1000 per room)
       return sum + Math.floor(sale.roomRent / 1000);
     }, 0);
-    
-    const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const totalRevenue = dailySales.reduce(
-      (sum, sale) => sum + sale.roomRent + sale.restaurantBills + sale.barSales,
+
+    const totalExpenses = (expenses || []).reduce((sum, exp) => sum + (exp.amount || 0), 0);
+    const totalRevenue = (dailySales || []).reduce(
+      (sum, sale) => sum + (sale.roomRent || 0) + (sale.restaurantBills || 0) + (sale.barSales || 0),
       0
     );
-    
-    const totalRecords = inventory.length + dailySales.length + expenses.length + transactionHistory.getAllTransactions().length;
-    
+
+    const totalRecords = (inventory || []).length + (dailySales || []).length + (expenses || []).length + allTx.length;
+
     return {
       totalPegsSold,
       totalGuests,
-      totalExpensesLogged: expenses.length,
+      totalExpensesLogged: (expenses || []).length,
       totalExpensesAmount: totalExpenses,
       totalRevenue,
       totalRecords,
-      inventoryItems: inventory.length,
-      salesEntries: dailySales.length,
-      expenseEntries: expenses.length,
-      transactions: transactionHistory.getAllTransactions().length,
+      inventoryItems: (inventory || []).length,
+      salesEntries: (dailySales || []).length,
+      expenseEntries: (expenses || []).length,
+      transactions: allTx.length,
     };
   }, [inventory, dailySales, expenses]);
   

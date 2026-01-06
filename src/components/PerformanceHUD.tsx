@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Activity, Monitor, Zap, TrendingUp } from 'lucide-react';
+import { Activity, Monitor, Zap, TrendingUp, X, Cpu, HardDrive, Thermometer } from 'lucide-react';
 
 interface PerformanceMetrics {
   fps: number;
@@ -36,20 +36,20 @@ export default function PerformanceHUD() {
   const calculateFPS = useCallback(() => {
     const now = performance.now();
     const delta = now - lastTimeRef.current;
-    
+
     frameCountRef.current++;
-    
+
     // Update every second
     if (delta >= 1000) {
       const fps = Math.round((frameCountRef.current * 1000) / delta);
       const frameTime = delta / frameCountRef.current;
-      
+
       setMetrics((prev) => ({
         ...prev,
         fps,
         frameTime: Math.round(frameTime * 100) / 100,
       }));
-      
+
       frameCountRef.current = 0;
       lastTimeRef.current = now;
     }
@@ -109,10 +109,10 @@ export default function PerformanceHUD() {
     return (
       <button
         onClick={() => setIsVisible(true)}
-        className="fixed bottom-20 right-4 z-50 p-2 bg-forest-green/80 hover:bg-forest-green text-brushed-gold rounded-full shadow-lg transition-all touch-manipulation"
+        className="fixed bottom-20 right-4 z-50 p-3 bg-gradient-to-br from-forest-green to-forest-green-light hover:from-forest-green-light hover:to-forest-green text-brushed-gold rounded-full shadow-xl transition-all touch-manipulation hover:scale-110"
         title="Performance HUD (Ctrl+Shift+P)"
       >
-        <Activity size={18} />
+        <Activity size={20} />
       </button>
     );
   }
@@ -122,89 +122,134 @@ export default function PerformanceHUD() {
   const memoryWarning = metrics.memoryUsed > MEMORY_WARNING_THRESHOLD;
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 bg-forest-green/95 backdrop-blur-sm border-2 border-brushed-gold rounded-xl shadow-2xl p-4 min-w-[280px] font-mono text-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Monitor className="text-brushed-gold" size={18} />
-          <h3 className="text-brushed-gold font-bold">Performance HUD</h3>
+    <div className="fixed bottom-20 right-4 z-50 bg-white/95 backdrop-blur-sm border-2 border-brushed-gold/30 rounded-2xl shadow-2xl p-5 min-w-[300px] font-mono text-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-forest-green/10 rounded-lg">
+            <Monitor className="text-forest-green" size={20} />
+          </div>
+          <h3 className="text-forest-green font-bold text-lg">Performance Monitor</h3>
         </div>
         <button
           onClick={() => setIsVisible(false)}
-          className="text-brushed-gold/70 hover:text-brushed-gold transition-colors"
+          className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
         >
-          ×
+          <X size={18} />
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* FPS Display */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Zap className="text-brushed-gold/80" size={14} />
-            <span className="text-brushed-gold/80">FPS:</span>
-          </div>
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
           <div className="flex items-center gap-3">
-            <span className={`font-bold text-lg ${fpsColor}`}>
+            <div className={`p-2 rounded-lg ${
+              metrics.fps >= TARGET_FPS ? 'bg-green-100' : metrics.fps >= 30 ? 'bg-yellow-100' : 'bg-red-100'
+            }`}>
+              <Zap className={`${
+                metrics.fps >= TARGET_FPS ? 'text-green-600' : metrics.fps >= 30 ? 'text-yellow-600' : 'text-red-600'
+              }`} size={16} />
+            </div>
+            <span className="text-forest-green/80 font-medium">Frames Per Second</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`font-bold text-xl ${
+              metrics.fps >= TARGET_FPS ? 'text-green-600' : metrics.fps >= 30 ? 'text-yellow-600' : 'text-red-600'
+            }`}>
               {metrics.fps}
             </span>
-            <span className="text-brushed-gold/60 text-xs">
+            <span className="text-forest-green/60 text-sm">
               ({metrics.frameTime}ms)
             </span>
           </div>
         </div>
 
         {/* Memory Display */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="text-brushed-gold/80" size={14} />
-            <span className="text-brushed-gold/80">Memory:</span>
+        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${
+              memoryWarning ? 'bg-yellow-100' : 'bg-forest-green/10'
+            }`}>
+              <HardDrive className={`${
+                memoryWarning ? 'text-yellow-600' : 'text-forest-green'
+              }`} size={16} />
+            </div>
+            <span className="text-forest-green/80 font-medium">Memory Usage</span>
           </div>
           <div className="flex flex-col items-end">
-            <span className={`font-bold ${memoryColor}`}>
+            <span className={`font-bold ${
+              memoryWarning ? 'text-yellow-600' : 'text-forest-green'
+            }`}>
               {metrics.memoryUsed} / {metrics.memoryTotal} MB
             </span>
-            <span className="text-brushed-gold/60 text-xs">
+            <span className="text-forest-green/60 text-sm">
               {metrics.memoryPercentage}%
             </span>
           </div>
         </div>
 
-        {/* FPS Bar */}
-        <div className="h-2 bg-forest-green/50 rounded-full overflow-hidden">
-          <div
-            className={`h-full transition-all duration-300 ${
-              metrics.fps >= TARGET_FPS
-                ? 'bg-green-500'
-                : metrics.fps >= 30
-                ? 'bg-yellow-500'
-                : 'bg-red-500'
-            }`}
-            style={{ width: `${Math.min((metrics.fps / TARGET_FPS) * 100, 100)}%` }}
-          />
+        {/* FPS Progress Bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs text-forest-green/70">
+            <span>FPS</span>
+            <span>{metrics.fps}/{TARGET_FPS}</span>
+          </div>
+          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all duration-300 ${
+                metrics.fps >= TARGET_FPS
+                  ? 'bg-gradient-to-r from-green-500 to-green-600'
+                  : metrics.fps >= 30
+                  ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+                  : 'bg-gradient-to-r from-red-500 to-red-600'
+              }`}
+              style={{ width: `${Math.min((metrics.fps / TARGET_FPS) * 100, 100)}%` }}
+            />
+          </div>
         </div>
 
-        {/* Memory Bar */}
-        <div className="h-2 bg-forest-green/50 rounded-full overflow-hidden">
-          <div
-            className={`h-full transition-all duration-300 ${
-              memoryWarning ? 'bg-yellow-500' : 'bg-green-500'
-            }`}
-            style={{ width: `${Math.min(metrics.memoryPercentage, 100)}%` }}
-          />
+        {/* Memory Progress Bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs text-forest-green/70">
+            <span>Memory</span>
+            <span>{metrics.memoryPercentage}%</span>
+          </div>
+          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all duration-300 ${
+                memoryWarning ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-gradient-to-r from-green-500 to-green-600'
+              }`}
+              style={{ width: `${Math.min(metrics.memoryPercentage, 100)}%` }}
+            />
+          </div>
         </div>
 
-        {/* Warning */}
-        {memoryWarning && (
-          <div className="text-xs text-yellow-400 text-center pt-1 border-t border-brushed-gold/20">
-            ⚠ High memory usage
+        {/* Status Indicators */}
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className={`p-3 rounded-xl text-center ${
+            metrics.fps >= TARGET_FPS ? 'bg-green-50 border border-green-200' :
+            metrics.fps >= 30 ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className={`text-sm font-bold ${
+              metrics.fps >= TARGET_FPS ? 'text-green-700' :
+              metrics.fps >= 30 ? 'text-yellow-700' : 'text-red-700'
+            }`}>
+              {metrics.fps >= TARGET_FPS ? 'Excellent' :
+               metrics.fps >= 30 ? 'Good' : 'Poor'}
+            </div>
+            <div className="text-xs text-forest-green/60">Performance</div>
           </div>
-        )}
 
-        {metrics.fps < 30 && (
-          <div className="text-xs text-red-400 text-center pt-1 border-t border-brushed-gold/20">
-            ⚠ Low FPS - UI may lag
+          <div className={`p-3 rounded-xl text-center ${
+            memoryWarning ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'
+          }`}>
+            <div className={`text-sm font-bold ${
+              memoryWarning ? 'text-yellow-700' : 'text-green-700'
+            }`}>
+              {memoryWarning ? 'High' : 'Normal'}
+            </div>
+            <div className="text-xs text-forest-green/60">Memory</div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ProductInventory } from '../utils/liquorLogic';
+export type { ProductInventory };
 import { parseInventoryExcel } from '../utils/excelParser';
 import { storeSyncManager } from '../utils/storeSync';
 
@@ -21,7 +22,7 @@ export interface DailySales {
 export interface Expense {
   id: string;
   date: string;
-  category: 'Supplies' | 'Bills' | 'Wages' | 'Other';
+  category: string;
   description: string;
   amount: number;
 }

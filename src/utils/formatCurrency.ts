@@ -2,13 +2,14 @@
  * Currency formatting utilities for Indian Rupees
  */
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | string): string {
+  const num = typeof amount === 'string' ? parseFloat(amount) || 0 : amount;
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(num);
 }
 
 export function formatNumber(amount: number, decimals: number = 2): string {

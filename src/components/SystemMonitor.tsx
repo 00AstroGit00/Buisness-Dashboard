@@ -16,6 +16,11 @@ import {
   Shield,
   TrendingUp,
   CheckCircle,
+  X,
+  Monitor,
+  Zap,
+  HardDrive,
+  Thermometer
 } from 'lucide-react';
 import PerformanceHUD from './PerformanceHUD';
 
@@ -233,7 +238,7 @@ export default function SystemMonitor() {
     return (
       <button
         onClick={() => setIsVisible(true)}
-        className="fixed bottom-4 right-4 z-50 p-3 bg-forest-green/80 hover:bg-forest-green text-brushed-gold rounded-full shadow-lg transition-all touch-manipulation"
+        className="fixed bottom-4 right-4 z-50 p-3 bg-gradient-to-br from-forest-green to-forest-green-light hover:from-forest-green-light hover:to-forest-green text-brushed-gold rounded-full shadow-xl transition-all touch-manipulation hover:scale-110"
         title="System Monitor (Ctrl+Shift+M)"
       >
         <Shield size={20} />
@@ -244,29 +249,33 @@ export default function SystemMonitor() {
   return (
     <>
       <PerformanceHUD />
-      <div className="fixed inset-4 bg-white border-2 border-brushed-gold rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col">
+      <div className="fixed inset-4 bg-white/95 backdrop-blur-sm border-2 border-brushed-gold/30 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="bg-forest-green text-brushed-gold p-4 flex items-center justify-between border-b border-brushed-gold/20">
+      <div className="bg-gradient-to-r from-forest-green to-forest-green-light text-brushed-gold p-4 flex items-center justify-between border-b border-brushed-gold/20">
         <div className="flex items-center gap-3">
-          <Activity className="text-brushed-gold" size={24} />
+          <div className="p-2 bg-white/10 rounded-lg">
+            <Activity className="text-brushed-gold" size={24} />
+          </div>
           <h2 className="text-xl font-bold">System Monitor (Admin Only)</h2>
         </div>
         <button
           onClick={() => setIsVisible(false)}
-          className="p-2 hover:bg-forest-green/50 rounded-lg transition-colors"
+          className="p-2 hover:bg-white/20 rounded-lg transition-colors text-brushed-gold"
         >
-          ×
+          <X size={20} />
         </button>
       </div>
 
       {/* Warnings */}
       {(metrics.memoryWarning || metrics.cpuWarning) && (
-        <div className="p-4 bg-red-50 border-b border-red-200">
+        <div className="p-4 bg-gradient-to-r from-red-50 to-orange-50 border-b border-red-200">
           <div className="flex items-center gap-4">
             {metrics.memoryWarning && (
               <div className="flex items-center gap-2 flex-1">
-                <AlertTriangle className="text-red-600" size={20} />
-                <div>
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <AlertTriangle className="text-red-600" size={20} />
+                </div>
+                <div className="flex-1">
                   <p className="font-semibold text-red-800">
                     High Memory Usage Detected ({formatNumber(metrics.memoryUsage.used, 0)} MB)
                   </p>
@@ -276,7 +285,7 @@ export default function SystemMonitor() {
                 </div>
                 <button
                   onClick={handleRefresh}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all flex items-center gap-2 shadow-md"
                 >
                   <RefreshCw size={16} />
                   Refresh Tab
@@ -285,7 +294,9 @@ export default function SystemMonitor() {
             )}
             {metrics.cpuWarning && (
               <div className="flex items-center gap-2">
-                <Cpu className="text-orange-600" size={20} />
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Cpu className="text-orange-600" size={20} />
+                </div>
                 <div>
                   <p className="font-semibold text-orange-800">High CPU Usage</p>
                   <p className="text-sm text-orange-700">
@@ -301,9 +312,11 @@ export default function SystemMonitor() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Memory Usage */}
-        <div className="bg-gray-50 rounded-xl border border-brushed-gold/20 p-6">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-brushed-gold/20 p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-forest-green mb-4 flex items-center gap-2">
-            <MemoryStick className="text-brushed-gold" size={20} />
+            <div className="p-2 bg-forest-green/10 rounded-lg">
+              <MemoryStick className="text-forest-green" size={20} />
+            </div>
             Memory Usage
           </h3>
           <div className="space-y-4">
@@ -315,10 +328,10 @@ export default function SystemMonitor() {
                   {formatNumber(metrics.memoryUsage.total, 0)} MB
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-4">
+              <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
-                  className={`h-4 rounded-full transition-all ${
-                    metrics.memoryWarning ? 'bg-red-500' : 'bg-brushed-gold'
+                  className={`h-3 rounded-full transition-all ${
+                    metrics.memoryWarning ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-brushed-gold to-brushed-gold-light'
                   }`}
                   style={{ width: `${Math.min(metrics.memoryUsage.percentage, 100)}%` }}
                 />
@@ -331,15 +344,15 @@ export default function SystemMonitor() {
               </div>
             </div>
             {metrics.memoryUsage.jsHeapSizeLimit && (
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-forest-green/60">JS Heap Limit</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <p className="text-forest-green/60 text-sm">JS Heap Limit</p>
                   <p className="font-semibold text-forest-green">
                     {formatNumber(metrics.memoryUsage.jsHeapSizeLimit, 0)} MB
                   </p>
                 </div>
-                <div>
-                  <p className="text-forest-green/60">Total JS Heap</p>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <p className="text-forest-green/60 text-sm">Total JS Heap</p>
                   <p className="font-semibold text-forest-green">
                     {metrics.memoryUsage.totalJSHeapSize
                       ? formatNumber(metrics.memoryUsage.totalJSHeapSize, 0)
@@ -347,8 +360,8 @@ export default function SystemMonitor() {
                     MB
                   </p>
                 </div>
-                <div>
-                  <p className="text-forest-green/60">Used JS Heap</p>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <p className="text-forest-green/60 text-sm">Used JS Heap</p>
                   <p className="font-semibold text-forest-green">
                     {metrics.memoryUsage.usedJSHeapSize
                       ? formatNumber(metrics.memoryUsage.usedJSHeapSize, 0)
@@ -363,14 +376,18 @@ export default function SystemMonitor() {
 
         {/* Battery Status */}
         {metrics.batteryLevel !== undefined && (
-          <div className="bg-gray-50 rounded-xl border border-brushed-gold/20 p-6">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-brushed-gold/20 p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-forest-green mb-4 flex items-center gap-2">
-              <Battery
-                className={
-                  metrics.batteryLevel < 20 ? 'text-red-600' : 'text-brushed-gold'
-                }
-                size={20}
-              />
+              <div className={`p-2 rounded-lg ${
+                metrics.batteryLevel < 20 ? 'bg-red-100' : 'bg-forest-green/10'
+              }`}>
+                <Battery
+                  className={
+                    metrics.batteryLevel < 20 ? 'text-red-600' : 'text-forest-green'
+                  }
+                  size={20}
+                />
+              </div>
               Battery Status
             </h3>
             <div className="flex items-center gap-4">
@@ -385,28 +402,28 @@ export default function SystemMonitor() {
                     {formatNumber(metrics.batteryLevel, 0)}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-4">
+                <div className="w-full bg-gray-200 rounded-full h-3">
                   <div
-                    className={`h-4 rounded-full transition-all ${
+                    className={`h-3 rounded-full transition-all ${
                       metrics.batteryLevel < 20
-                        ? 'bg-red-500'
+                        ? 'bg-gradient-to-r from-red-500 to-red-600'
                         : metrics.batteryLevel < 50
-                        ? 'bg-orange-500'
-                        : 'bg-green-500'
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600'
+                        : 'bg-gradient-to-r from-green-500 to-green-600'
                     }`}
                     style={{ width: `${metrics.batteryLevel}%` }}
                   />
                 </div>
               </div>
               {metrics.batteryCharging && (
-                <div className="flex items-center gap-2 text-green-600">
-                  <TrendingUp size={20} />
+                <div className="flex items-center gap-2 text-green-600 bg-green-100 px-3 py-1 rounded-full">
+                  <TrendingUp size={16} />
                   <span className="text-sm font-medium">Charging</span>
                 </div>
               )}
               {metrics.batteryLevel < 20 && !metrics.batteryCharging && (
-                <div className="flex items-center gap-2 text-red-600">
-                  <AlertTriangle size={20} />
+                <div className="flex items-center gap-2 text-red-600 bg-red-100 px-3 py-1 rounded-full">
+                  <AlertTriangle size={16} />
                   <span className="text-sm font-medium">Low Battery</span>
                 </div>
               )}
@@ -415,9 +432,11 @@ export default function SystemMonitor() {
         )}
 
         {/* Component Render Metrics */}
-        <div className="bg-gray-50 rounded-xl border border-brushed-gold/20 p-6">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border border-brushed-gold/20 p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-forest-green mb-4 flex items-center gap-2">
-            <Cpu className="text-brushed-gold" size={20} />
+            <div className="p-2 bg-forest-green/10 rounded-lg">
+              <Cpu className="text-forest-green" size={20} />
+            </div>
             Component Render Performance
           </h3>
           {metrics.renderMetrics.length === 0 ? (
@@ -427,18 +446,18 @@ export default function SystemMonitor() {
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-brushed-gold/20">
-                    <th className="text-left py-2 text-forest-green font-semibold">Component</th>
-                    <th className="text-right py-2 text-forest-green font-semibold">Render Count</th>
-                    <th className="text-right py-2 text-forest-green font-semibold">
+              <table className="w-full text-sm bg-white rounded-lg overflow-hidden">
+                <thead className="bg-forest-green text-brushed-gold">
+                  <tr>
+                    <th className="text-left py-3 px-4 font-semibold">Component</th>
+                    <th className="text-right py-3 px-4 font-semibold">Render Count</th>
+                    <th className="text-right py-3 px-4 font-semibold">
                       Avg Duration (ms)
                     </th>
-                    <th className="text-right py-2 text-forest-green font-semibold">
+                    <th className="text-right py-3 px-4 font-semibold">
                       Max Duration (ms)
                     </th>
-                    <th className="text-right py-2 text-forest-green font-semibold">Status</th>
+                    <th className="text-right py-3 px-4 font-semibold">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -450,20 +469,20 @@ export default function SystemMonitor() {
                       return (
                         <tr
                           key={index}
-                          className={`border-b border-brushed-gold/10 ${
-                            isSlow ? 'bg-red-50/50' : ''
+                          className={`border-b border-gray-200 ${
+                            isSlow ? 'bg-red-50' : index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                           }`}
                         >
-                          <td className="py-2 text-forest-green font-medium">
+                          <td className="py-3 px-4 text-forest-green font-medium">
                             {metric.componentName}
                           </td>
-                          <td className="py-2 text-right text-forest-green">
+                          <td className="py-3 px-4 text-right text-forest-green">
                             {metric.renderCount}
                           </td>
-                          <td className="py-2 text-right text-forest-green">
+                          <td className="py-3 px-4 text-right text-forest-green">
                             {formatNumber(metric.avgDuration, 2)}
                           </td>
-                          <td className="py-2 text-right">
+                          <td className="py-3 px-4 text-right">
                             <span
                               className={
                                 metric.maxDuration > CPU_WARNING_DURATION
@@ -474,14 +493,14 @@ export default function SystemMonitor() {
                               {formatNumber(metric.maxDuration, 2)}
                             </span>
                           </td>
-                          <td className="py-2 text-right">
+                          <td className="py-3 px-4 text-right">
                             {isSlow ? (
-                              <span className="text-red-600 flex items-center justify-end gap-1">
+                              <span className="text-red-600 flex items-center justify-end gap-1 bg-red-100 px-2 py-1 rounded-full">
                                 <AlertTriangle size={14} />
                                 Slow
                               </span>
                             ) : (
-                              <span className="text-green-600 flex items-center justify-end gap-1">
+                              <span className="text-green-600 flex items-center justify-end gap-1 bg-green-100 px-2 py-1 rounded-full">
                                 <CheckCircle size={14} />
                                 OK
                               </span>
@@ -497,7 +516,7 @@ export default function SystemMonitor() {
         </div>
 
         {/* Last Update */}
-        <div className="text-center text-xs text-forest-green/60">
+        <div className="text-center text-xs text-forest-green/60 py-4 border-t border-gray-200">
           Last updated: {metrics.lastUpdate.toLocaleTimeString('en-IN')}
         </div>
       </div>

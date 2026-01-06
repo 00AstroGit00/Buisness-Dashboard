@@ -19,7 +19,8 @@ import {
   RefreshCw,
   Image as ImageIcon
 } from 'lucide-react';
-import { useBusinessStore, RoomDetail, RoomStatus } from '../store/useBusinessStore';
+import { useBusinessStore } from '../store/useBusinessStore';
+import type { RoomDetail, RoomStatus } from '../store/useBusinessStore';
 import { formatCurrency } from '../utils/formatCurrency';
 import PrivateNumber from './PrivateNumber';
 

@@ -12,11 +12,11 @@ export function useAutoHydrate(filePath?: string) {
     // Only hydrate if:
     // 1. No items loaded yet
     // 2. Not currently loading
-    // 3. No recent hydration (optional: can skip if hydrated in last 5 minutes)
-    if (inventoryItems.length === 0 && !isLoading) {
+    // 3. autoHydrateFromExcel is available
+    if (inventoryItems.length === 0 && !isLoading && typeof autoHydrateFromExcel === 'function' && filePath) {
       autoHydrateFromExcel(filePath);
     }
-  }, []); // Run once on mount
+  }, [autoHydrateFromExcel, filePath, inventoryItems.length, isLoading]); // Run when dependencies change
 
   return { isLoading, lastHydrated, itemCount: inventoryItems.length };
 }

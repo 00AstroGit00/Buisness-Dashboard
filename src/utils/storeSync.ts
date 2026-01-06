@@ -8,7 +8,7 @@
 import { useEffect, useRef } from 'react';
 import type { AppState } from '../store/Store';
 import type { ProductInventory } from '../utils/liquorLogic';
-import type { BusinessStoreState } from '../store/useBusinessStore';
+import type { BusinessState } from '../store/useBusinessStore';
 
 export type SyncEventType = 'inventory' | 'billing' | 'rooms' | 'accounting' | 'full-sync' | 'business-store' | 'sale-recorded' | 'room-updated' | 'STOCK_UPDATE';
 
@@ -238,56 +238,52 @@ export function deserializeStoreState(json: string): Partial<AppState> {
  * Enhanced JSON serializer for business store state
  * Handles Inventory, Billing, Rooms, and complex nested objects
  */
-export function serializeBusinessStoreState(state: Partial<BusinessStoreState>): string {
+export function serializeBusinessStoreState(state: Partial<BusinessState>): string {
   try {
     // Custom serializer to handle complex nested objects including 60ml peg sales history
     const serializableState = {
       inventoryItems: state.inventoryItems?.map(item => ({
-        ...item,
-        // Ensure inventory property is properly serialized if it exists
-        inventory: item.inventory ? {
-          productName: item.inventory.productName,
+          productName: item.productName,
           config: {
-            size: item.inventory.config.size,
-            bottlesPerCase: item.inventory.config.bottlesPerCase,
-            pegsPerBottle: item.inventory.config.pegsPerBottle,
-            mlPerBottle: item.inventory.config.mlPerBottle,
-            category: item.inventory.config.category,
+            size: item.config.size,
+            bottlesPerCase: item.config.bottlesPerCase,
+            pegsPerBottle: item.config.pegsPerBottle,
+            mlPerBottle: item.config.mlPerBottle,
+            category: item.config.category,
           },
           openingStock: {
-            totalMl: item.inventory.openingStock.totalMl,
-            fullCases: item.inventory.openingStock.fullCases,
-            looseBottles: item.inventory.openingStock.looseBottles,
-            loosePegs: item.inventory.openingStock.loosePegs,
-            totalBottles: item.inventory.openingStock.totalBottles,
-            totalPegs: item.inventory.openingStock.totalPegs,
+            totalMl: item.openingStock.totalMl,
+            fullCases: item.openingStock.fullCases,
+            looseBottles: item.openingStock.looseBottles,
+            loosePegs: item.openingStock.loosePegs,
+            totalBottles: item.openingStock.totalBottles,
+            totalPegs: item.openingStock.totalPegs,
           },
           purchases: {
-            totalMl: item.inventory.purchases.totalMl,
-            fullCases: item.inventory.purchases.fullCases,
-            looseBottles: item.inventory.purchases.looseBottles,
-            loosePegs: item.inventory.purchases.loosePegs,
-            totalBottles: item.inventory.purchases.totalBottles,
-            totalPegs: item.inventory.purchases.totalPegs,
+            totalMl: item.purchases.totalMl,
+            fullCases: item.purchases.fullCases,
+            looseBottles: item.purchases.looseBottles,
+            loosePegs: item.purchases.loosePegs,
+            totalBottles: item.purchases.totalBottles,
+            totalPegs: item.purchases.totalPegs,
           },
-          sales: item.inventory.sales, // 60ml peg sales history
+          sales: item.sales, // 60ml peg sales history
           priceData: {
-            productName: item.inventory.priceData.productName,
-            size: item.inventory.priceData.size,
-            category: item.inventory.priceData.category,
-            purchaseCostPerCase: item.inventory.priceData.purchaseCostPerCase,
+            productName: item.priceData.productName,
+            size: item.priceData.size,
+            category: item.priceData.category,
+            purchaseCostPerCase: item.priceData.purchaseCostPerCase,
           },
           currentStock: {
-            totalMl: item.inventory.currentStock.totalMl,
-            fullCases: item.inventory.currentStock.fullCases,
-            looseBottles: item.inventory.currentStock.looseBottles,
-            loosePegs: item.inventory.currentStock.loosePegs,
-            totalBottles: item.inventory.currentStock.totalBottles,
-            totalPegs: item.inventory.currentStock.totalPegs,
+            totalMl: item.currentStock.totalMl,
+            fullCases: item.currentStock.fullCases,
+            looseBottles: item.currentStock.looseBottles,
+            loosePegs: item.currentStock.loosePegs,
+            totalBottles: item.currentStock.totalBottles,
+            totalPegs: item.currentStock.totalPegs,
           },
-          wastage: item.inventory.wastage,
-          remainingVolumeInCurrentBottle: item.inventory.remainingVolumeInCurrentBottle,
-        } : undefined
+          wastage: item.wastage,
+          remainingVolumeInCurrentBottle: item.remainingVolumeInCurrentBottle,
       })),
       expenses: state.expenses,
       staff: state.staff?.map(member => ({
@@ -309,7 +305,7 @@ export function serializeBusinessStoreState(state: Partial<BusinessStoreState>):
 /**
  * Enhanced JSON deserializer for business store state
  */
-export function deserializeBusinessStoreState(json: string): Partial<BusinessStoreState> {
+export function deserializeBusinessStoreState(json: string): Partial<BusinessState> {
   try {
     const parsed = JSON.parse(json);
     return parsed;

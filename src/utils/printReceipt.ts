@@ -15,7 +15,7 @@ export interface ReceiptData {
     description: string;
     qty: number;
     amount: number;
-    category: 'food' | 'liquor' | 'room';
+    category: string;
   }>;
   taxSummary: {
     foodGst: number;

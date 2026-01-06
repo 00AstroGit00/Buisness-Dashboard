@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { Lock, AlertCircle, Fingerprint } from 'lucide-react';
+import { Lock, AlertCircle, Fingerprint, Shield, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -62,13 +62,13 @@ export default function Login() {
 
     setTimeout(() => {
       const success = login(pinString);
-      
+
       if (!success) {
         setError('Invalid PIN. Please try again.');
         setPin(['', '', '', '']);
         inputRefs.current[0]?.focus();
       }
-      
+
       setIsSubmitting(false);
     }, 300);
   };
@@ -94,14 +94,9 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo and Branding */}
         <div className="text-center mb-8">
-          <img
-            src="/assets/images/logo-with-branding.png"
-            alt="Deepa Restaurant & Tourist Home Logo"
-            className="w-32 h-auto mx-auto mb-4 object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
+          <div className="bg-white/10 backdrop-blur-sm rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
+            <ShieldCheck className="text-brushed-gold" size={48} />
+          </div>
           <h1 className="text-3xl font-bold text-brushed-gold mb-2">
             Deepa Restaurant & Tourist Home
           </h1>
@@ -109,46 +104,48 @@ export default function Login() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-brushed-gold/30">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
           <div className="flex items-center justify-center mb-6">
-            <div className="p-4 bg-forest-green/10 rounded-full">
-              <Lock className="text-forest-green" size={32} />
+            <div className="p-4 bg-gradient-to-br from-forest-green to-forest-green-light rounded-full">
+              <Lock className="text-brushed-gold" size={32} />
             </div>
           </div>
 
           <h2 className="text-2xl font-bold text-forest-green text-center mb-2">
             Secure Login
           </h2>
-          <p className="text-forest-green/60 text-center mb-8">
+          <p className="text-forest-green/70 text-center mb-8">
             Enter your 4-digit PIN to continue
           </p>
 
           <form onSubmit={handleSubmit}>
             {/* PIN Input */}
-            <div className="flex justify-center gap-3 mb-6">
+            <div className="flex justify-center gap-4 mb-6">
               {pin.map((digit, index) => (
                 <input
                   key={index}
                   ref={(el) => {
                     inputRefs.current[index] = el;
                   }}
-                  type="text"
+                  type="password"
                   inputMode="numeric"
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handlePinChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   disabled={isSubmitting || isAuthenticating}
-                  className="w-16 h-16 md:w-20 md:h-20 text-center text-2xl md:text-3xl font-bold border-2 rounded-xl transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-brushed-gold focus:border-brushed-gold disabled:opacity-50 disabled:cursor-not-allowed border-forest-green/30 text-forest-green"
+                  className="w-16 h-16 md:w-20 md:h-20 text-center text-3xl md:text-4xl font-bold border-2 rounded-xl transition-all touch-manipulation focus:outline-none focus:ring-4 focus:ring-brushed-gold/30 focus:border-brushed-gold disabled:opacity-50 disabled:cursor-not-allowed border-forest-green/30 text-forest-green bg-white shadow-sm"
                 />
               ))}
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                <AlertCircle className="text-red-600 flex-shrink-0" size={18} />
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-full">
+                  <AlertCircle className="text-red-600" size={20} />
+                </div>
+                <p className="text-sm text-red-700 font-medium">{error}</p>
               </div>
             )}
 
@@ -156,7 +153,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isSubmitting || isAuthenticating}
-              className="w-full bg-brushed-gold hover:bg-brushed-gold/90 text-forest-green font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[56px] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-brushed-gold to-brushed-gold-light hover:from-brushed-gold-light hover:to-brushed-gold text-forest-green font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 touch-manipulation min-h-[56px] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {isSubmitting ? (
                 <>
@@ -174,12 +171,12 @@ export default function Login() {
             {/* Fingerprint Login Option */}
             {showFingerprintPrompt && isWebAuthnAvailable && (
               <>
-                <div className="relative my-4">
+                <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-brushed-gold/20"></div>
+                    <div className="w-full border-t border-gray-200"></div>
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-forest-green/50">Or</span>
+                  <div className="relative flex justify-center">
+                    <span className="bg-white px-4 text-forest-green/60 text-sm">Or continue with</span>
                   </div>
                 </div>
 
@@ -187,7 +184,7 @@ export default function Login() {
                   type="button"
                   onClick={handleFingerprintLogin}
                   disabled={isAuthenticating || isSubmitting}
-                  className="w-full bg-forest-green hover:bg-forest-green/90 text-brushed-gold font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation min-h-[56px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-forest-green to-forest-green-light hover:from-forest-green-light hover:to-forest-green text-brushed-gold font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 touch-manipulation min-h-[56px] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                 >
                   {isAuthenticating ? (
                     <>
@@ -197,7 +194,7 @@ export default function Login() {
                   ) : (
                     <>
                       <Fingerprint size={24} />
-                      Login with Fingerprint
+                      Fingerprint Login
                     </>
                   )}
                 </button>
@@ -211,9 +208,15 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-brushed-gold/60 text-xs mt-6">
-          Secure access for authorized personnel only
-        </p>
+        <div className="mt-8 text-center">
+          <div className="flex items-center justify-center gap-2 text-brushed-gold/60 text-xs mb-2">
+            <ShieldCheck size={14} />
+            <span>Secured with enterprise-grade encryption</span>
+          </div>
+          <p className="text-brushed-gold/50 text-xs">
+            Secure access for authorized personnel only
+          </p>
+        </div>
       </div>
     </div>
   );

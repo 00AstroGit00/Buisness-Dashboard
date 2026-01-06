@@ -37,6 +37,8 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Increase maximum cached asset size to accommodate large branding images
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
         runtimeCaching: [
           {

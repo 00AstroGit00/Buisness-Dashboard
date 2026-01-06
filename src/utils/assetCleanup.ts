@@ -14,7 +14,7 @@ export interface DuplicateBackup {
   duplicateOf?: string;
   recordCounts: {
     inventory: number;
-    dailySales: number;
+    sales: number;
     expenses: number;
   };
 }
@@ -36,10 +36,10 @@ export function analyzeDuplicateBackups(): DuplicateBackup[] {
   const backups: DuplicateBackup[] = [];
   const seenFingerprints = new Map<string, string>();
 
-  for (const entry of backupLog) {
+  for (const entry of backupLog.entries) {
     // Create a fingerprint based on record counts
-    const fingerprint = `${entry.recordCounts.inventory}-${entry.recordCounts.dailySales}-${entry.recordCounts.expenses}`;
-    
+    const fingerprint = `${entry.recordCounts.inventory}-${entry.recordCounts.sales}-${entry.recordCounts.expenses}`;
+
     const isDuplicate = seenFingerprints.has(fingerprint);
     const duplicateOf = isDuplicate ? seenFingerprints.get(fingerprint) : undefined;
 
@@ -47,10 +47,14 @@ export function analyzeDuplicateBackups(): DuplicateBackup[] {
       id: entry.filename,
       filename: entry.filename,
       timestamp: new Date(entry.timestamp),
-      fileSize: entry.fileSize,
+      fileSize: entry.fileSize ?? 0,
       isDuplicate,
       duplicateOf,
-      recordCounts: entry.recordCounts,
+      recordCounts: {
+        inventory: entry.recordCounts.inventory,
+        sales: entry.recordCounts.sales,
+        expenses: entry.recordCounts.expenses,
+      },
     });
 
     // Track the first occurrence of each fingerprint

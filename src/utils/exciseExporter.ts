@@ -48,9 +48,9 @@ export function exportExciseReportToExcel(
   const totalDiscrepancies = rows.filter((row) => row.discrepancy !== null).length;
 
   excelData.push({
-    'SL No': '',
+    'SL No': 0,
     'Brand Name': 'TOTAL',
-    'Size (ml)': '',
+    'Size (ml)': 0,
     'Opening Stock': '',
     'Receipts (New Stock)': '',
     'Sales (Pegs)': totalPegs,

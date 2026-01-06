@@ -4,7 +4,7 @@
  * All primary controls within thumb-reach zone
  */
 
-import { LayoutDashboard, Package, Calculator, UserCircle, Folder, ReceiptText, TrendingUp, Settings } from 'lucide-react';
+import { LayoutDashboard, Package, Calculator, UserCircle, Folder, ReceiptText, TrendingUp, Settings, Home, ShoppingCart, FileText, Shield, Users, BarChart3, Archive, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import type React from 'react';
 
@@ -21,25 +21,25 @@ interface NavItem {
 
 export default function BottomNavigation({ currentPage, onPageChange }: BottomNavigationProps) {
   const { hasAccess } = useAuth();
-  
+
   // All available nav items
   const allNavItems: Array<NavItem & { adminOnly?: boolean }> = [
-    { id: 'dashboard', label: 'Dash', icon: <LayoutDashboard size={24} /> },
+    { id: 'dashboard', label: 'Home', icon: <Home size={24} /> },
     { id: 'inventory', label: 'Stock', icon: <Package size={24} /> },
-    { id: 'accounting', label: 'Acct', icon: <Calculator size={24} /> },
-    { id: 'employees', label: 'Staff', icon: <UserCircle size={24} />, adminOnly: true },
-    { id: 'analytics', label: 'Analytics', icon: <TrendingUp size={24} />, adminOnly: true },
-    { id: 'compliance', label: 'Vault', icon: <Folder size={24} />, adminOnly: true },
-    { id: 'billing', label: 'Bill', icon: <ReceiptText size={24} />, adminOnly: true },
-    { id: 'settings', label: 'Set', icon: <Settings size={24} />, adminOnly: true }
+    { id: 'accounting', label: 'Finance', icon: <Calculator size={24} /> },
+    { id: 'employees', label: 'Staff', icon: <Users size={24} />, adminOnly: true },
+    { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={24} />, adminOnly: true },
+    { id: 'compliance', label: 'Compliance', icon: <Shield size={24} />, adminOnly: true },
+    { id: 'billing', label: 'Billing', icon: <ReceiptText size={24} />, adminOnly: true },
+    { id: 'settings', label: 'Settings', icon: <Wrench size={24} />, adminOnly: true }
   ];
 
   // Filter based on access
   const navItems = allNavItems.filter((item) => hasAccess(item.id));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-forest-green border-t-2 border-brushed-gold/30 shadow-2xl lg:hidden">
-      <div className="flex items-center justify-around h-20 px-2" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-forest-green to-forest-green-light border-t-2 border-brushed-gold/30 shadow-2xl lg:hidden">
+      <div className="flex items-center justify-around h-20 px-2 py-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}>
         {navItems.map((item) => {
           const isActive = currentPage === item.id;
           return (
@@ -47,12 +47,12 @@ export default function BottomNavigation({ currentPage, onPageChange }: BottomNa
               key={item.id}
               onClick={() => onPageChange(item.id)}
               className={`
-                flex flex-col items-center justify-center 
-                min-h-[64px] min-w-[64px] px-3 py-2 rounded-xl
+                flex flex-col items-center justify-center
+                min-h-[60px] min-w-[60px] px-2 py-1.5 rounded-2xl
                 transition-all duration-200 touch-manipulation
-                ${isActive 
-                  ? 'bg-brushed-gold text-forest-green shadow-lg scale-105' 
-                  : 'text-brushed-gold/70 hover:text-brushed-gold hover:bg-forest-green/50'
+                ${isActive
+                  ? 'bg-gradient-to-b from-brushed-gold to-brushed-gold-light text-forest-green shadow-xl scale-105'
+                  : 'text-brushed-gold/80 hover:text-brushed-gold hover:bg-forest-green/30'
                 }
               `}
               aria-label={item.label}
@@ -60,16 +60,16 @@ export default function BottomNavigation({ currentPage, onPageChange }: BottomNa
               <div className={`${isActive ? 'scale-110' : ''} transition-transform`}>
                 {item.icon}
               </div>
-              <span className={`text-xs font-medium mt-1 ${isActive ? 'font-bold' : ''}`}>
+              <span className={`text-[10px] font-medium mt-1 ${isActive ? 'font-bold' : ''}`}>
                 {item.label}
               </span>
             </button>
           );
         })}
       </div>
-      
+
       {/* Safe area spacer for devices with home indicator */}
-      <div className="h-safe-area-inset-bottom bg-forest-green" />
+      <div className="h-safe-area-inset-bottom bg-gradient-to-t from-forest-green to-forest-green-light" />
     </nav>
   );
 }

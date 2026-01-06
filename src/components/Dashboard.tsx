@@ -1,5 +1,5 @@
 import { useState, useMemo, Suspense, lazy } from 'react';
-import { Menu, Loader2 } from 'lucide-react';
+import { Menu, Loader2, Building, User, Shield, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useStoreSync } from '../hooks/useStoreSync';
 
@@ -39,7 +39,7 @@ export default function Dashboard() {
   const { user, logout, hasAccess } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
-  
+
   const syncStatus = useStoreSync();
 
   // FIX: Access control without infinite loops
@@ -72,7 +72,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row overflow-hidden font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col lg:flex-row overflow-hidden font-sans">
       {/* ✅ Lazy load system monitoring components to save RAM */}
       <Suspense fallback={null}>
         <SystemMonitor />
@@ -88,10 +88,10 @@ export default function Dashboard() {
           <EmergencyLock />
         </Suspense>
       )}
-      
+
       {/* Sidebar for Desktop / Overlay for Mobile */}
-      <Sidebar 
-        currentPage={activePage} 
+      <Sidebar
+        currentPage={activePage}
         onPageChange={(p) => { setCurrentPage(p as Page); setSidebarOpen(false); }}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -100,31 +100,36 @@ export default function Dashboard() {
         syncStatus={syncStatus}
       />
 
-      <main className="flex-1 overflow-y-auto h-screen pb-20 lg:pb-0">
+      <main className="flex-1 overflow-y-auto h-screen pb-20 lg:pb-0 bg-gradient-to-b from-white to-gray-50">
           {/* Mobile Header Optimized for S23 Ultra */}
-          <header className="lg:hidden bg-[#0a3d31] p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-             <div className="flex flex-col">
-               <h1 className="text-[#c5a059] font-bold text-lg">Deepa Hotel</h1>
-               <span className="text-[#c5a059]/70 text-[10px] uppercase tracking-widest">Cherpulassery</span>
+          <header className="lg:hidden bg-gradient-to-r from-forest-green to-forest-green-light p-4 flex justify-between items-center sticky top-0 z-50 shadow-lg">
+             <div className="flex items-center gap-3">
+               <div className="p-2 bg-white/20 rounded-xl">
+                 <Building className="text-brushed-gold" size={24} />
+               </div>
+               <div>
+                 <h1 className="text-brushed-gold font-bold text-lg">Deepa Hotel</h1>
+                 <span className="text-brushed-gold/70 text-[10px] uppercase tracking-widest">Cherpulassery</span>
+               </div>
              </div>
-             <div className="flex items-center gap-2">
+             <div className="flex items-center gap-3">
                <PrivacyModeToggle />
-               <button 
-                 onClick={() => setSidebarOpen(true)} 
-                 className="text-[#c5a059] p-2"
+               <button
+                 onClick={() => setSidebarOpen(true)}
+                 className="text-brushed-gold p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
                  title="Open Menu"
                  aria-label="Open navigation menu"
                >
-                 <Menu size={28} />
+                 <Menu size={24} />
                </button>
              </div>
           </header>
 
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
           <Suspense fallback={
-            <div className="flex flex-col items-center justify-center h-64 text-[#0a3d31]">
-              <Loader2 className="animate-spin mb-2" size={32} />
-              <p className="text-sm font-medium">Loading {activePage}...</p>
+            <div className="flex flex-col items-center justify-center h-64 text-forest-green">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brushed-gold mb-4"></div>
+              <p className="text-sm font-medium text-forest-green/70">Loading {activePage}...</p>
             </div>
           }>
             {renderPage()}
@@ -133,7 +138,7 @@ export default function Dashboard() {
       </main>
 
       {/* Bottom Nav for Mobile */}
-      <div className="lg:hidden border-t border-gray-200">
+      <div className="lg:hidden">
         <BottomNavigation currentPage={activePage} onPageChange={(p) => setCurrentPage(p as Page)} />
       </div>
     </div>

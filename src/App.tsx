@@ -1,5 +1,6 @@
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PrivacyModeProvider } from './context/PrivacyModeContext';
+import { NotificationProvider } from './components/NotificationProvider';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login_Enhanced'; // Uses the enhanced login with fingerprint & PIN
 import LoadingSpinner from './components/LoadingSpinner';
@@ -22,11 +23,13 @@ function AppContent() {
 }
 
 export default function App() {
-  // Ensure the entire app is wrapped in AuthProvider
+  // Ensure the entire app is wrapped in AuthProvider and NotificationProvider
   return (
     <AuthProvider>
       <PrivacyModeProvider>
-        <AppContent />
+        <NotificationProvider>
+          <AppContent />
+        </NotificationProvider>
       </PrivacyModeProvider>
     </AuthProvider>
   );

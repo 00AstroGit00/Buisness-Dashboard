@@ -12,16 +12,16 @@ export default function PrivacyModeToggle() {
   return (
     <button
       onClick={togglePrivacyMode}
-      className={`px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-all touch-manipulation ${
+      className={`p-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition-all touch-manipulation bg-gradient-to-r ${
         isPrivacyMode
-          ? 'bg-brushed-gold text-forest-green shadow-md'
-          : 'bg-gray-200 text-forest-green/70 hover:bg-gray-300'
+          ? 'from-brushed-gold to-brushed-gold-light text-forest-green shadow-lg'
+          : 'from-gray-200 to-gray-300 text-forest-green/80 hover:from-gray-300 hover:to-gray-400'
       }`}
       title={isPrivacyMode ? 'Privacy Mode Active' : 'Privacy Mode Inactive'}
     >
-      {isPrivacyMode ? <EyeOff size={18} /> : <Eye size={18} />}
-      <span className="hidden sm:inline">
-        Privacy Mode {isPrivacyMode ? 'ON' : 'OFF'}
+      {isPrivacyMode ? <EyeOff size={20} /> : <Eye size={20} />}
+      <span className="hidden sm:inline text-xs font-bold">
+        {isPrivacyMode ? 'PRIVACY ON' : 'PRIVACY OFF'}
       </span>
     </button>
   );
