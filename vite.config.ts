@@ -73,6 +73,9 @@ export default defineConfig({
     watch: {
       ignored: ['**/Buisiness-Branding-Elements/**'],
     },
+    fs: { // Added
+      allow: [__dirname], // Added: Allow serving files from the root directory
+    },
   },
   build: {
     // Optimize for fast initial load (< 1.5s on Samsung S23 Ultra)
@@ -154,5 +157,6 @@ export default defineConfig({
       'recharts',
     ],
     exclude: ['liquorCalculator.worker.ts', 'Buisiness-Branding-Elements'], // Exclude workers from optimization
+    force: true, // Added: Force dependency pre-bundling
   },
 })
