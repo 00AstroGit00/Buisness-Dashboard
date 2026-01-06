@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Business Branding</title>
+    <link rel="stylesheet" href="css/brand_theme.css">
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--color-primary-main);
+            background-image: url('assets/patterns/pattern-diagonal-green.svg');
+        }
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            padding: 2.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .login-logo {
+            max-width: 200px;
+            margin: 0 auto 2rem auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-card">
+            <img src="assets/images/logo-with-branding.png" alt="Brand Logo" class="login-logo">
+            
+            <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--color-gray-900);">Welcome Back</h2>
+            <p style="color: var(--color-gray-600); margin-bottom: 2rem;">Please sign in to your dashboard</p>
+            
+            <form>
+                <div class="form-group" style="text-align: left;">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" placeholder="name@company.com">
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" placeholder="••••••••">
+                </div>
+                
+                <div style="text-align: left; margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.9rem; color: var(--color-gray-600); display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox"> Remember me
+                    </label>
+                </div>
+
+                <a href="dashboard.html" class="btn btn-primary" style="width: 100%;">Sign In</a>
+                
+                <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--color-gray-600);">
+                    Don't have an account? <a href="#" style="color: var(--color-primary-main); font-weight: 600;">Sign up</a>
+                </p>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

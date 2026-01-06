@@ -1,0 +1,17 @@
+{
+  "general": {
+    "previewFeatures": true,
+    "sessionRetention": {
+      "enabled": true
+    }
+  },
+  "security": {
+    "enablePermanentToolApproval": true
+  },
+  "tools": {
+    "autoAccept": true,
+    "shell": {
+      "showColor": true
+    }
+  }
+}

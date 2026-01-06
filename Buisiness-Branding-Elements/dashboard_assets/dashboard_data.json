@@ -1,0 +1,52 @@
+{
+  "dashboard_stats": {
+    "total_revenue": 124500,
+    "active_users": 3420,
+    "new_signups": 150,
+    "conversion_rate": 2.4
+  },
+  "monthly_sales": [
+    {
+      "month": "Jan",
+      "value": 12000
+    },
+    {
+      "month": "Feb",
+      "value": 19000
+    },
+    {
+      "month": "Mar",
+      "value": 15000
+    },
+    {
+      "month": "Apr",
+      "value": 22000
+    },
+    {
+      "month": "May",
+      "value": 28000
+    },
+    {
+      "month": "Jun",
+      "value": 25000
+    }
+  ],
+  "user_demographics": [
+    {
+      "segment": "18-24",
+      "percentage": 20
+    },
+    {
+      "segment": "25-34",
+      "percentage": 45
+    },
+    {
+      "segment": "35-44",
+      "percentage": 25
+    },
+    {
+      "segment": "45+",
+      "percentage": 10
+    }
+  ]
+}

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Business Branding</title>
+    <link rel="stylesheet" href="css/brand_theme.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <!-- Using the white/transparent logo we have or forcing the branded one -->
+                <img src="assets/images/logo-standalone.png" alt="Logo" class="sidebar-logo">
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active">
+                    <img src="icons/dashboard.svg" alt="" class="nav-icon">
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <img src="icons/users.svg" alt="" class="nav-icon">
+                    Customers
+                </a>
+                <a href="#" class="nav-item">
+                    <img src="icons/analytics.svg" alt="" class="nav-icon">
+                    Analytics
+                </a>
+                <a href="#" class="nav-item">
+                    <img src="icons/file-text.svg" alt="" class="nav-icon">
+                    Reports
+                </a>
+                <a href="#" class="nav-item">
+                    <img src="icons/settings.svg" alt="" class="nav-icon">
+                    Settings
+                </a>
+            </nav>
+            <div style="padding: 1.5rem;">
+                <div class="card" style="background: rgba(255,255,255,0.1); border: none; color: white;">
+                    <div class="card-body">
+                        <p style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 10px;">Pro Plan</p>
+                        <a href="#" class="btn btn-secondary" style="width: 100%; font-size: 0.85rem; padding: 0.4rem;">Upgrade</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div style="display: flex; align-items: center;">
+                    <button id="menu-toggle" class="mobile-menu-btn" aria-label="Toggle Navigation">
+                        <img src="icons/menu.svg" alt="Menu" style="width: 24px; height: 24px;">
+                    </button>
+                    <div class="search-bar">
+                        <img src="icons/search.svg" alt="" class="search-icon">
+                        <input type="text" class="form-control search-input" placeholder="Search...">
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button id="theme-toggle" class="btn btn-outline" style="padding: 4px 8px; border: none;" aria-label="Toggle Dark Mode">
+                        <img src="icons/settings.svg" alt="Theme" style="width: 20px; opacity: 0.6;">
+                    </button>
+                    <img src="icons/bell.svg" alt="Notifications" style="width: 20px; opacity: 0.6; cursor: pointer;">
+                    <div class="user-profile">
+                        <div class="avatar">JD</div>
+                        <span style="font-size: 0.9rem; font-weight: 500;">Jane Doe</span>
+                        <img src="icons/chevron-down.svg" alt="" style="width: 16px; opacity: 0.5;">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h1>Overview</h1>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-outline">Export</button>
+                        <button class="btn btn-primary">+ New Report</button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="color: var(--color-primary-main); background: var(--color-gray-100);">
+                            <img src="icons/analytics.svg" alt="">
+                        </div>
+                        <div>
+                            <div class="kpi-value">$24,500</div>
+                            <div class="kpi-label">Total Revenue</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="color: var(--color-secondary-dark); background: var(--color-secondary-light);">
+                            <img src="icons/users.svg" alt="">
+                        </div>
+                        <div>
+                            <div class="kpi-value">1,240</div>
+                            <div class="kpi-label">Active Users</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="color: var(--color-success); background: #d4edda;">
+                            <img src="icons/check-circle.svg" alt="">
+                        </div>
+                        <div>
+                            <div class="kpi-value">98.5%</div>
+                            <div class="kpi-label">Satisfaction</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="color: var(--color-danger); background: #f8d7da;">
+                            <img src="icons/alert-circle.svg" alt="">
+                        </div>
+                        <div>
+                            <div class="kpi-value">12</div>
+                            <div class="kpi-label">Pending Issues</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="dashboard-charts">
+                    <div class="card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Revenue Trend</span>
+                            <span class="badge badge-neutral">This Year</span>
+                        </div>
+                        <div class="card-body">
+                            <img src="charts/revenue_chart_v2.png" alt="Revenue Chart" style="width: 100%; max-height: 300px; object-fit: contain;">
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">User Demographics</div>
+                        <div class="card-body" style="display: flex; justify-content: center;">
+                            <img src="charts/demographics_chart_v2.png" alt="Demographics Chart" style="width: 100%; max-height: 300px; object-fit: contain;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Table -->
+                <div class="card">
+                    <div class="card-header">Recent Transactions</div>
+                    <div class="card-body">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="text-align: left; border-bottom: 2px solid var(--color-gray-200);">
+                                    <th style="padding: 10px; font-weight: 600; font-size: 0.85rem; color: var(--color-gray-600);">ID</th>
+                                    <th style="padding: 10px; font-weight: 600; font-size: 0.85rem; color: var(--color-gray-600);">Customer</th>
+                                    <th style="padding: 10px; font-weight: 600; font-size: 0.85rem; color: var(--color-gray-600);">Date</th>
+                                    <th style="padding: 10px; font-weight: 600; font-size: 0.85rem; color: var(--color-gray-600);">Amount</th>
+                                    <th style="padding: 10px; font-weight: 600; font-size: 0.85rem; color: var(--color-gray-600);">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid var(--color-gray-100);">
+                                    <td style="padding: 12px 10px;">#TRX-9871</td>
+                                    <td style="padding: 12px 10px;">Acme Corp</td>
+                                    <td style="padding: 12px 10px;">Jan 02, 2026</td>
+                                    <td style="padding: 12px 10px;">$1,200.00</td>
+                                    <td style="padding: 12px 10px;"><span class="badge badge-primary">Completed</span></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--color-gray-100);">
+                                    <td style="padding: 12px 10px;">#TRX-9872</td>
+                                    <td style="padding: 12px 10px;">Global Tech</td>
+                                    <td style="padding: 12px 10px;">Jan 02, 2026</td>
+                                    <td style="padding: 12px 10px;">$850.00</td>
+                                    <td style="padding: 12px 10px;"><span class="badge badge-secondary">Pending</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px 10px;">#TRX-9873</td>
+                                    <td style="padding: 12px 10px;">Local Biz</td>
+                                    <td style="padding: 12px 10px;">Jan 01, 2026</td>
+                                    <td style="padding: 12px 10px;">$430.00</td>
+                                    <td style="padding: 12px 10px;"><span class="badge badge-primary">Completed</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

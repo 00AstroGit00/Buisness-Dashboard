@@ -1,0 +1,36 @@
+{
+  "palette": {
+    "primary": {
+      "main": "#203627",
+      "light": "#30513a",
+      "dark": "#16251b",
+      "text_contrast": "#ffffff"
+    },
+    "secondary": {
+      "main": "#e2d099",
+      "light": "#fff9b7",
+      "dark": "#b4a67a",
+      "text_contrast": "#203627"
+    },
+    "neutral": {
+      "100": "#f8f9fa",
+      "200": "#e9ecef",
+      "300": "#dee2e6",
+      "400": "#ced4da",
+      "500": "#adb5bd",
+      "600": "#6c757d",
+      "700": "#495057",
+      "800": "#343a40",
+      "900": "#212529"
+    },
+    "semantic": {
+      "success": "#28a745",
+      "warning": "#ffc107",
+      "danger": "#dc3545",
+      "info": "#17a2b8"
+    }
+  },
+  "typography": {
+    "fontFamily": "Inter, sans-serif"
+  }
+}

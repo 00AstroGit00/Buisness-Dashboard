@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Design System</title>
+    <link rel="stylesheet" href="css/brand_theme.css">
+</head>
+<body>
+
+    <div class="container">
+        <header class="section">
+            <h1>Brand Design System</h1>
+            <p class="lead">
+                This style guide defines the visual elements for the business dashboard. 
+                It includes the standardized color palette, typography, logo variations, and UI components.
+            </p>
+        </header>
+
+        <section class="section">
+            <h2>Application Prototypes</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <a href="dashboard.html" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s;">
+                    <div class="card-body" style="text-align: center; padding: 30px;">
+                        <img src="icons/dashboard.svg" style="width: 48px; margin: 0 auto 15px; opacity: 0.8;" alt="">
+                        <h3 style="color: var(--color-primary-main);">Main Dashboard</h3>
+                        <p style="font-size: 0.9rem; color: var(--color-gray-600);">View the responsive application interface layout.</p>
+                    </div>
+                </a>
+                <a href="login.html" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s;">
+                    <div class="card-body" style="text-align: center; padding: 30px;">
+                        <img src="icons/users.svg" style="width: 48px; margin: 0 auto 15px; opacity: 0.8;" alt="">
+                        <h3 style="color: var(--color-primary-main);">Login Page</h3>
+                        <p style="font-size: 0.9rem; color: var(--color-gray-600);">Branded authentication screen with background patterns.</p>
+                    </div>
+                </a>
+                <a href="settings.html" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s;">
+                    <div class="card-body" style="text-align: center; padding: 30px;">
+                        <img src="icons/settings.svg" style="width: 48px; margin: 0 auto 15px; opacity: 0.8;" alt="">
+                        <h3 style="color: var(--color-primary-main);">Settings Page</h3>
+                        <p style="font-size: 0.9rem; color: var(--color-gray-600);">Form layout and user preferences.</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>UI Components</h2>
+            <div style="display: grid; gap: 40px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                
+                <!-- Buttons -->
+                <div class="card">
+                    <div class="card-header">Buttons</div>
+                    <div class="card-body" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <a href="#" class="btn btn-primary">Primary Action</a>
+                        <a href="#" class="btn btn-secondary">Secondary</a>
+                        <a href="#" class="btn btn-outline">Outline</a>
+                    </div>
+                </div>
+
+                <!-- Badges -->
+                <div class="card">
+                    <div class="card-header">Badges</div>
+                    <div class="card-body" style="display: flex; gap: 10px; align-items: center;">
+                        <span class="badge badge-primary">New</span>
+                        <span class="badge badge-secondary">Pending</span>
+                        <span class="badge badge-neutral">Draft</span>
+                    </div>
+                </div>
+
+                <!-- Inputs -->
+                <div class="card">
+                    <div class="card-header">Form Inputs</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-control" placeholder="name@example.com">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Brand Colors</h2>
+            <p class="lead">Click on a color to copy its HEX value to your clipboard.</p>
+            <div class="grid-colors" id="color-palette">
+                <!-- Colors will be enhanced by JS -->
+                <div class="color-card" onclick="copyColor('#203627')">
+                    <div class="swatch" style="background-color: #203627; color: white;">Primary Main</div>
+                    <div class="color-info">#203627<span class="hex">--color-primary-main</span></div>
+                </div>
+                <div class="color-card" onclick="copyColor('#55735f')">
+                    <div class="swatch" style="background-color: #55735f; color: white;">Primary Light</div>
+                    <div class="color-info">#55735f<span class="hex">--color-primary-light</span></div>
+                </div>
+                <div class="color-card" onclick="copyColor('#e2d099')">
+                    <div class="swatch" style="background-color: #e2d099; color: #203627;">Secondary Main</div>
+                    <div class="color-info">#e2d099<span class="hex">--color-secondary-main</span></div>
+                </div>
+                <div class="color-card" onclick="copyColor('#efe3bb')">
+                    <div class="swatch" style="background-color: #efe3bb; color: #203627;">Secondary Light</div>
+                    <div class="color-info">#efe3bb<span class="hex">--color-secondary-light</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Iconography Usage</h2>
+            <p class="lead">Icons are provided as scalable SVG files. Use them as background images or inlined SVGs.</p>
+            
+            <div style="display: grid; gap: 20px; grid-template-columns: 1fr 1fr;">
+                <div class="card">
+                    <div class="card-header">Implementation: Image Tag</div>
+                    <div class="card-body">
+                        <code style="display: block; background: #f4f4f4; padding: 10px; border-radius: 4px;">
+                            &lt;img src="icons/dashboard.svg" alt="Dashboard"&gt;
+                        </code>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">Implementation: CSS Mask</div>
+                    <div class="card-body">
+                        <code style="display: block; background: #f4f4f4; padding: 10px; border-radius: 4px;">
+                            .icon { mask: url('icons/settings.svg'); }
+                        </code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Visualizations</h2>
+            <div class="grid-charts">
+                <div class="chart-box">
+                    <h3>Revenue Overview</h3>
+                    <img src="charts/revenue_chart_v2.png" alt="Revenue Chart">
+                </div>
+                <div class="chart-box">
+                    <h3>User Demographics</h3>
+                    <img src="charts/demographics_chart_v2.png" alt="Demographics Chart">
+                </div>
+                <div class="chart-box">
+                    <h3>Growth Trend</h3>
+                    <img src="charts/trend_chart_v2.png" alt="Trend Chart">
+                </div>
+            </div>
+        </section>
+        <section class="section">
+            <h2>Design Resources</h2>
+            <h3>Patterns</h3>
+            <div class="grid-colors">
+                <div class="color-card">
+                    <div class="swatch" style="background-image: url('assets/patterns/pattern-diagonal-green.svg'); background-size: 20px;"></div>
+                    <div class="color-info">Diagonal Green</div>
+                </div>
+                <div class="color-card">
+                    <div class="swatch" style="background-image: url('assets/patterns/pattern-dots-gold.svg'); background-size: 40px;"></div>
+                    <div class="color-info">Dots Gold</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 20px;">Placeholders</h3>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
+                <img src="assets/placeholders/placeholder-square.png" width="200" style="border:1px solid #ddd; border-radius:8px;" alt="Square Placeholder">
+                <img src="assets/placeholders/banner-ad.png" style="border:1px solid #ddd; border-radius:8px;" alt="Banner Ad">
+            </div>
+
+            <h3>Social Assets</h3>
+            <div style="display: flex; gap: 40px; align-items: flex-start;">
+                <div style="text-align: center;">
+                    <img src="assets/social/favicon.png" style="width: 64px; height: 64px; border:1px solid #ddd; padding: 5px; border-radius: 8px;" alt="Favicon">
+                    <p style="font-size: 0.8rem; margin-top: 5px; color: #666;">Favicon</p>
+                </div>
+                <div style="text-align: center;">
+                    <img src="assets/social/og-image.jpg" width="300" style="border:1px solid #ddd; border-radius: 8px;" alt="OG Image">
+                    <p style="font-size: 0.8rem; margin-top: 5px; color: #666;">Social Share Preview</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        function copyColor(hex) {
+            navigator.clipboard.writeText(hex).then(() => {
+                alert(`Copied ${hex} to clipboard!`);
+            });
+        }
+    </script>
+</body>
+</html>

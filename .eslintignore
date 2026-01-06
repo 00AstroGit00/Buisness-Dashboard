@@ -1,0 +1,6 @@
+.vite_cache/
+public/optimized-images/
+public/optimized-images/**
+node_modules/
+**/dist/
+.env

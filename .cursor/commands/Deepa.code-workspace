@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"geminicodeassist.agentDebugMode": true,
+		"geminicodeassist.agentYoloMode": true,
+		"gemini-cli.debug.logging.enabled": true,
+		"geminicodeassist.inlineSuggestions.nextEditPredictions": true,
+		"notebook.defaultFormatter": "qwenlm.qwen-code-vscode-ide-companion",
+		"geminicodeassist.updateChannel": "Insiders",
+		"mssql.intelliSense.lowerCaseSuggestions": true
+	}
+}

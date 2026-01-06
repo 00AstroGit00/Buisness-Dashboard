@@ -1,0 +1,366 @@
+/* Deepa Restaurant Dashboard - Core Styles */
+:root {
+  --color-forest-green: #0a3d31;
+  --color-forest-green-light: #0d5243;
+  --color-forest-green-dark: #062821;
+  --color-brushed-gold: #c5a059;
+  --color-brushed-gold-light: #d4b371;
+  --color-brushed-gold-dark: #a6893f;
+  --bg-light: #f8fafc;
+  --text-dark: #0a3d31;
+  --border-light: #e2e8f0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utility Classes - Core Layout */
+.min-h-screen { min-height: 100vh; }
+.h-screen { height: 100vh; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 0.5rem; }
+.gap-4 { gap: 1rem; }
+
+/* Spacing */
+.p-4 { padding: 1rem; }
+.p-6 { padding: 1.5rem; }
+.p-8 { padding: 2rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+/* Sizing */
+.w-full { width: 100%; }
+.max-w-7xl { max-width: 1120px; }
+.h-64 { height: 16rem; }
+
+/* Background & Border */
+.bg-white { background-color: #ffffff; }
+.bg-gray-50 { background-color: #f9fafb; }
+.bg-forest-green { background-color: var(--color-forest-green); }
+.bg-gradient-forest { background: linear-gradient(135deg, var(--color-forest-green), var(--color-forest-green-light)); }
+.border { border: 1px solid var(--border-light); }
+.border-brushed-gold { border-color: var(--color-brushed-gold); }
+.rounded-lg { border-radius: 0.5rem; }
+.rounded-xl { border-radius: 0.75rem; }
+.rounded-2xl { border-radius: 1rem; }
+.shadow-md { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+.shadow-lg { box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); }
+.shadow-2xl { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15); }
+
+/* Text */
+.text-sm { font-size: 0.875rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+.text-3xl { font-size: 1.875rem; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.text-forest-green { color: var(--color-forest-green); }
+.text-brushed-gold { color: var(--color-brushed-gold); }
+.text-center { text-align: center; }
+
+/* Forms & Inputs */
+input, button, select, textarea {
+  font: inherit;
+  border: 1px solid var(--border-light);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  background-color: #ffffff;
+}
+
+input:focus, button:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-forest-green);
+  box-shadow: 0 0 0 3px rgba(10, 61, 49, 0.1);
+}
+
+button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Touch optimization for mobile */
+@media (hover: none) and (pointer: coarse) {
+  button, a, input {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .p-6 { padding: 1rem; }
+  .text-3xl { font-size: 1.5rem; }
+}
+
+/* Loading animation */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Gradient backgrounds */
+.bg-gradient-to-br { background-image: linear-gradient(135deg, currentColor); }
+
+/* Sticky positioning */
+.sticky { position: sticky; }
+.top-0 { top: 0; }
+.z-50 { z-index: 50; }
+
+/* Overflow */
+.overflow-hidden { overflow: hidden; }
+.overflow-y-auto { overflow-y: auto; }
+
+/* Display utilities */
+.hidden { display: none; }
+.inline { display: inline; }
+.inline-block { display: inline-block; }
+.block { display: block; }
+
+/* Flex utilities */
+.flex-1 { flex: 1; }
+.shrink-0 { flex-shrink: 0; }
+
+/* Mobile Touch Optimizations for Samsung S23 Ultra and MI Pad 7 */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets for mobile devices */
+  button, a, input, select, textarea {
+    min-height: 48px; /* Increased for Samsung S23 Ultra */
+    min-width: 48px;
+  }
+  
+  /* Better touch scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Samsung S23 Ultra specific optimizations (portrait: 360px x 780px typical) */
+@media screen and (max-width: 420px) and (orientation: portrait) {
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(197, 160, 89, 0.3);
+  }
+  
+  /* Larger touch targets specifically for S23 Ultra - thumb-friendly */
+  button {
+    min-height: 56px;
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+  
+  /* Extra large buttons for critical actions like "Add Sale" */
+  button[class*="Add"],
+  button[class*="Save"] {
+    min-height: 60px;
+    padding: 16px 24px;
+    font-size: 18px;
+  }
+  
+  /* Increased spacing for card grids */
+  .grid {
+    gap: 1rem;
+  }
+  
+  /* Optimize text sizes for readability */
+  h1, h2, h3 {
+    line-height: 1.3;
+  }
+}
+
+/* MI Pad 7 optimizations (1024px x 600px typical) - Multi-column layout */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(197, 160, 89, 0.3);
+  }
+  
+  /* Multi-column grid layouts for tablets */
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  
+  /* Optimized card sizes for tablet */
+  .rounded-xl {
+    padding: 1.5rem;
+  }
+  
+  /* Better spacing for tablet interactions */
+  button {
+    min-height: 48px;
+    padding: 12px 20px;
+  }
+  
+  /* Sticky table headers for better scrolling on tablets */
+  table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  /* Hide bottom navigation on tablets */
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* Large tablet and desktop optimizations */
+@media screen and (min-width: 1025px) {
+  /* Multi-column layouts for larger screens */
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+/* Enhanced responsive grid for EmployeeHub and card-based layouts */
+.grid-responsive-cards {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .grid-responsive-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .grid-responsive-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid-responsive-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Prevent text selection on buttons for better touch experience */
+button, .touch-manipulation {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* Consistent Forest Green and Brushed Gold branding */
+.text-forest-green {
+  color: var(--color-forest-green);
+}
+
+.text-brushed-gold {
+  color: var(--color-brushed-gold);
+}
+
+.bg-forest-green {
+  background-color: var(--color-forest-green);
+}
+
+.bg-brushed-gold {
+  background-color: var(--color-brushed-gold);
+}
+
+.border-forest-green {
+  border-color: var(--color-forest-green);
+}
+
+        .border-brushed-gold {
+          border-color: var(--color-brushed-gold);
+        }
+
+        /* Safe area insets for mobile devices with notches/home indicators */
+        .safe-area-inset-bottom {
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .h-safe-area-inset-bottom {
+          height: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* Bottom padding for mobile devices with bottom navigation */
+        @media (max-width: 1024px) {
+          body {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+          }
+        }
+
+        /* Mobile Print Optimizations for Receipts (S23 Ultra) */
+        @media print {
+          .receipt-print {
+            width: 80mm !important;
+            max-width: 80mm !important;
+            margin: 0 auto !important;
+            padding: 8mm !important;
+            font-size: 10px !important;
+          }
+          
+          /* Hide everything except receipt when printing */
+          body * {
+            visibility: hidden;
+          }
+          
+          .receipt-print,
+          .receipt-print * {
+            visibility: visible;
+          }
+          
+          .receipt-print {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 80mm !important;
+          }
+        }
+
+        /* Mobile screen receipt styling for S23 Ultra */
+        @media screen and (max-width: 420px) {
+          .receipt-print {
+            width: 100% !important;
+            max-width: 360px;
+            font-size: 12px;
+            padding: 16px;
+          }
+        }

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Business Branding</title>
+    <link rel="stylesheet" href="css/brand_theme.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar (Should be componentized in real app) -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="assets/images/logo-standalone.png" alt="Logo" class="sidebar-logo">
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <img src="icons/dashboard.svg" alt="" class="nav-icon">
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <img src="icons/users.svg" alt="" class="nav-icon">
+                    Customers
+                </a>
+                <a href="#" class="nav-item">
+                    <img src="icons/analytics.svg" alt="" class="nav-icon">
+                    Analytics
+                </a>
+                <a href="#" class="nav-item">
+                    <img src="icons/file-text.svg" alt="" class="nav-icon">
+                    Reports
+                </a>
+                <a href="settings.html" class="nav-item active">
+                    <img src="icons/settings.svg" alt="" class="nav-icon">
+                    Settings
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div style="display: flex; align-items: center;">
+                    <button id="menu-toggle" class="mobile-menu-btn" aria-label="Toggle Navigation">
+                        <img src="icons/menu.svg" alt="Menu" style="width: 24px; height: 24px;">
+                    </button>
+                    <h2>Settings</h2>
+                </div>
+                <div class="topbar-actions">
+                    <button id="theme-toggle" class="btn btn-outline" style="padding: 4px 8px; border: none;" aria-label="Toggle Dark Mode">
+                         <img src="icons/settings.svg" alt="Theme" style="width: 20px; opacity: 0.6;">
+                    </button>
+                    <div class="user-profile">
+                        <div class="avatar">JD</div>
+                        <span style="font-size: 0.9rem; font-weight: 500;">Jane Doe</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <div class="card" style="max-width: 800px; margin: 0 auto;">
+                    <div class="card-header">Account Settings</div>
+                    <div class="card-body">
+                        <form>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" class="form-control" value="Jane">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" value="Doe">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-control" value="jane@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Role</label>
+                                <input type="text" class="form-control" value="Administrator" disabled style="background: #f0f0f0; color: #666;">
+                            </div>
+                            
+                            <hr style="border: 0; border-top: 1px solid var(--color-gray-200); margin: 2rem 0;">
+                            
+                            <h3>Notifications</h3>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 10px;">
+                                    <input type="checkbox" checked> Email me about new features
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 10px;">
+                                    <input type="checkbox" checked> Email me about security updates
+                                </label>
+                            </div>
+
+                            <div style="margin-top: 2rem; text-align: right;">
+                                <button type="button" class="btn btn-outline" style="margin-right: 10px;">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
