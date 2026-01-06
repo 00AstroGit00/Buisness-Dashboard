@@ -838,10 +838,32 @@ input:checked + .toggle-slider:before {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Modern Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  font: inherit;
+}
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+}
+
+#root {
+  isolation: isolate;
 }
 
 html, body, #root {
@@ -850,12 +872,33 @@ html, body, #root {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
   background-color: var(--bg-light);
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+  line-height: 1.5;
+}
+
+/* Modern Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-brushed-gold), var(--color-forest-green));
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--color-forest-green), var(--color-brushed-gold));
 }
 
 /* Utility Classes - Core Layout */
