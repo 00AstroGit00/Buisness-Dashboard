@@ -62,7 +62,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  cacheDir: './.vite_cache', // Prevent Windows 11 from locking node_modules
+
   clearScreen: false, // Prevent Vite from clearing the terminal screen
   server: {
     host: true, // Expose to local network for mobile access
@@ -142,7 +142,7 @@ export default defineConfig({
   },
   // Optimize dependencies
   optimizeDeps: {
-    entries: ['./index.html', './src/main.tsx'],
+    entries: ['index.html', 'src/main.tsx'],
     include: [
       'react',
       'react-dom',
