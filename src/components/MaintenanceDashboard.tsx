@@ -25,6 +25,7 @@ import {
   getCleanupRecommendations,
   cleanupDuplicateBackups,
   getRetentionRecommendations,
+  performSystemMaintenance,
 } from '../utils/assetCleanup';
 import {
   checkForUpdates,
@@ -44,10 +45,23 @@ export default function MaintenanceDashboard() {
   const { lastHeartbeat, isChecking, performCheck } = useSystemHeartbeat();
   const [cleanupReport, setCleanupReport] = useState(() => getCleanupRecommendations());
   const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [isPerformingMaint, setIsPerformingMaint] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(() => getCachedUpdates());
-  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
   
-  const { inventory, dailySales, expenses } = useStore();
+  // ... existing code ...
+
+  const handleSystemMaint = () => {
+    if (!confirm('Run System Maintenance? This will permanently clear security logs older than 30 days.')) return;
+    
+    setIsPerformingMaint(true);
+    setTimeout(() => {
+      const result = performSystemMaintenance();
+      alert(`Maintenance Complete!\nLogs Removed: ${result.logsRemoved}\nSpace Freed: ${result.spaceFreed.toFixed(2)} KB`);
+      setIsPerformingMaint(false);
+    }, 1000);
+  };
+
+
   
   // Calculate growth metrics
   const growthMetrics = useMemo(() => {
@@ -231,6 +245,27 @@ export default function MaintenanceDashboard() {
           </div>
         )}
       </div>
+
+      {/* System Maintenance Mode */}
+      <div className="bg-white rounded-xl border border-brushed-gold/20 shadow-md p-6 flex flex-col justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-forest-green mb-2 flex items-center gap-2">
+            <RefreshCw className={`text-brushed-gold ${isPerformingMaint ? 'animate-spin' : ''}`} size={20} />
+            Maintenance Mode
+          </h3>
+          <p className="text-sm text-forest-green/60 mb-6">
+            Keep your HP Laptop running at peak performance. This action clears historical data and security logs older than 30 days to free up NVMe SSD space and browser memory.
+          </p>
+        </div>
+        
+        <button
+          onClick={handleSystemMaint}
+          disabled={isPerformingMaint}
+          className="w-full py-4 bg-forest-green text-brushed-gold rounded-xl font-bold uppercase text-xs shadow-lg hover:bg-forest-green-light disabled:opacity-50 transition-all"
+        >
+          {isPerformingMaint ? 'Optimizing System...' : 'Run 30-Day Cleanup'}
+        </button>
+      </div>
       
       {/* Auto-Updater */}
       <div className="bg-white rounded-xl border border-brushed-gold/20 shadow-md p-6">
@@ -278,7 +313,7 @@ export default function MaintenanceDashboard() {
                   onClick={() => markUpdateAsSeen(update.version)}
                   className="text-sm text-brushed-gold hover:text-brushed-gold/80 font-medium"
                 >
-                  View Release Notes →
+                  View Release Notes {'>'}
                 </button>
               </div>
             ))}

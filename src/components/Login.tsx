@@ -95,7 +95,7 @@ export default function Login() {
         {/* Logo and Branding */}
         <div className="text-center mb-8">
           <img
-            src="/Buisiness-Branding-Elements/dashboard_assets/assets/images/logo-with-branding.png"
+            src="/assets/images/logo-with-branding.png"
             alt="Deepa Restaurant & Tourist Home Logo"
             className="w-32 h-auto mx-auto mb-4"
             onError={(e) => {

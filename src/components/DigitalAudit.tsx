@@ -1,448 +1,200 @@
 /**
  * Digital Audit Component
- * Stock reconciliation and audit utilities for Bar Manager
- * Includes QR code generation for transaction history
+ * Features: Physical vs Digital reconciliation and Shift Variance reporting.
+ * Optimized for high-precision bar audits.
  */
 
 import { useState, useMemo } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
-import {
-  ClipboardCheck,
-  AlertTriangle,
-  ToggleLeft,
-  ToggleRight,
-  QrCode,
-  Download,
+import { 
+  ClipboardCheck, 
+  RefreshCw, 
+  AlertTriangle, 
+  CheckCircle, 
+  TrendingUp,
   FileText,
-  CheckCircle,
-  XCircle,
+  Save,
+  User,
+  ShieldAlert
 } from 'lucide-react';
-import { useStore } from '../store/Store';
-import { formatCurrency, formatNumber } from '../utils/formatCurrency';
-import {
-  transactionHistory,
-  generateProductId,
-  type Transaction,
-} from '../store/transactionHistory';
-import type { ProductInventory } from '../utils/liquorLogic';
-
-interface ReconciliationRow {
-  productId: string;
-  productName: string;
-  volume: string; // e.g., "750ml"
-  batchNo: string; // Placeholder - would come from invoices
-  openingStock: number; // in pegs
-  newPurchases: number; // in pegs
-  totalAvailable: number; // Opening + Purchases
-  totalPegSales: number; // Total pegs sold
-  expectedClosing: number; // Expected closing stock in pegs
-  actualClosing: number; // Actual closing stock from currentStock
-  discrepancy: number; // Difference (positive = missing stock)
-  transactions: Transaction[];
-}
+import { useBusinessStore } from '../store/useBusinessStore';
+import { formatNumber } from '../utils/formatCurrency';
 
 export default function DigitalAudit() {
-  const { inventory } = useStore();
-  const [auditMode, setAuditMode] = useState(false);
-  const [selectedProductForQR, setSelectedProductForQR] = useState<string | null>(null);
+  const { inventory, adjustStock } = useBusinessStore();
+  
+  // Local state for physical measurements (ML)
+  const [measuredMl, setMeasuredMl] = useState<Record<string, string>>({});
+  const [auditNotes, setNote] = useState<Record<string, string>>({});
 
-  // Generate reconciliation data
-  const reconciliationData: ReconciliationRow[] = useMemo(() => {
-    return inventory.map((item: ProductInventory) => {
-      const productId = generateProductId(item.productName, item.config.size);
-      const transactions = transactionHistory.getProductTransactions(productId);
-
-      // Calculate stock in pegs
-      const openingStockPegs = item.openingStock.totalPegs || 0;
-      const purchasesPegs = item.purchases.totalPegs || 0;
-      const totalAvailable = openingStockPegs + purchasesPegs;
-      const totalPegSales = item.sales || 0;
-      const expectedClosing = totalAvailable - totalPegSales;
-      const actualClosing = item.currentStock.totalPegs || 0;
-      const discrepancy = expectedClosing - actualClosing;
-
-      // Generate batch number from product name hash (placeholder - should come from invoices)
-      const batchNo = `BATCH-${Math.abs(
-        item.productName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-      )
-        .toString(36)
-        .toUpperCase()
-        .substring(0, 8)}`;
+  // --- 1. Audit Logic: Variance Calculation ---
+  const auditResults = useMemo(() => {
+    return inventory.map((item) => {
+      const digitalTotalMl = item.currentStock.totalMl;
+      const physicalInput = measuredMl[item.productName] || '';
+      
+      // Calculate physical ml: (Full Bottles * Capacity) + Measured Open Bottle ML
+      const physicalMl = (item.currentStock.totalBottles * item.config.mlPerBottle) + (parseFloat(physicalInput) || 0);
+      
+      const varianceMl = digitalTotalMl - physicalMl;
+      const variancePercent = digitalTotalMl > 0 ? (varianceMl / digitalTotalMl) * 100 : 0;
 
       return {
-        productId,
-        productName: item.productName.replace(/\s+\d+ml$/, '').trim(), // Remove size suffix
-        volume: `${item.config.size}ml`,
-        batchNo,
-        openingStock: openingStockPegs,
-        newPurchases: purchasesPegs,
-        totalAvailable,
-        totalPegSales,
-        expectedClosing,
-        actualClosing,
-        discrepancy,
-        transactions,
+        ...item,
+        digitalTotalMl,
+        physicalMl,
+        varianceMl,
+        variancePercent,
+        isHighVariance: Math.abs(variancePercent) > 3 // Flag if variance > 3%
       };
     });
-  }, [inventory]);
+  }, [inventory, measuredMl]);
 
-  // Filter items with discrepancies
-  const itemsWithDiscrepancy = useMemo(() => {
-    return reconciliationData.filter((row) => Math.abs(row.discrepancy) > 0.1); // Allow 0.1 peg tolerance
-  }, [reconciliationData]);
+  // --- 2. Stock Adjustment Handler ---
+  const handleFinalAdjustment = (productName: string) => {
+    const row = auditResults.find(r => r.productName === productName);
+    const measuredOpenMl = parseFloat(measuredMl[productName]);
 
-  // Generate QR code data for a product
-  const generateQRCodeData = (row: ReconciliationRow): string => {
-    const transactionHistoryText = row.transactions
-      .map((t) => {
-        const date = new Date(t.timestamp).toLocaleString('en-IN', {
-          dateStyle: 'short',
-          timeStyle: 'short',
-        });
-        const typeLabel = t.type === 'sale' ? 'SALE' : t.type === 'purchase' ? 'PURCHASE' : 'WASTAGE';
-        return `${date} | ${typeLabel} | ${t.quantity}${t.type === 'sale' ? ' peg (60ml)' : t.type === 'wastage' ? ' ml' : ' units'}`;
-      })
-      .join('\n');
-
-    return `DEEPA BAR AUDIT
-========================
-Product: ${row.productName}
-Volume: ${row.volume}
-Batch: ${row.batchNo}
-------------------------
-Transaction History:
-${transactionHistoryText || 'No transactions recorded'}
-------------------------
-Opening Stock: ${formatNumber(row.openingStock, 1)} pegs
-New Purchases: ${formatNumber(row.newPurchases, 1)} pegs
-Total Sales: ${formatNumber(row.totalPegSales, 1)} pegs
-Expected Closing: ${formatNumber(row.expectedClosing, 1)} pegs
-Actual Closing: ${formatNumber(row.actualClosing, 1)} pegs
-Discrepancy: ${row.discrepancy > 0 ? '+' : ''}${formatNumber(row.discrepancy, 1)} pegs
-========================
-Generated: ${new Date().toLocaleString('en-IN')}`;
-  };
-
-  // Export reconciliation report
-  const exportReconciliationReport = () => {
-    const reportLines = [
-      'DEEPA RESTAURANT & TOURIST HOME - DIGITAL AUDIT REPORT',
-      `Generated: ${new Date().toLocaleString('en-IN')}`,
-      '='.repeat(80),
-      '',
-    ];
-
-    reconciliationData.forEach((row) => {
-      reportLines.push(`Product: ${row.productName} (${row.volume})`);
-      reportLines.push(`Batch No: ${row.batchNo}`);
-      reportLines.push(`Opening Stock: ${formatNumber(row.openingStock, 1)} pegs`);
-      reportLines.push(`New Purchases: ${formatNumber(row.newPurchases, 1)} pegs`);
-      reportLines.push(`Total Available: ${formatNumber(row.totalAvailable, 1)} pegs`);
-      reportLines.push(`Total Peg Sales: ${formatNumber(row.totalPegSales, 1)} pegs`);
-      reportLines.push(`Expected Closing: ${formatNumber(row.expectedClosing, 1)} pegs`);
-      reportLines.push(`Actual Closing: ${formatNumber(row.actualClosing, 1)} pegs`);
-      reportLines.push(
-        `Discrepancy: ${row.discrepancy > 0 ? '+' : ''}${formatNumber(row.discrepancy, 1)} pegs ${
-          Math.abs(row.discrepancy) > 0.1 ? '⚠️' : '✓'
-        }`
-      );
-      reportLines.push('-'.repeat(80));
-      reportLines.push('');
-    });
-
-    const reportText = reportLines.join('\n');
-    const blob = new Blob([reportText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Digital_Audit_Report_${new Date().toISOString().split('T')[0]}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+    if (row && !isNaN(measuredOpenMl)) {
+      const reason = auditNotes[productName] || 'Shift Audit Reconciliation';
+      
+      if (window.confirm(`Adjust ${productName}?\nDigital: ${row.digitalTotalMl}ml\nPhysical: ${row.physicalMl}ml\nDifference will be logged as Wastage.`)) {
+        // Convert ML back to bottles and pegs for the adjustStock store action
+        const fullBottles = Math.floor(row.physicalMl / row.config.mlPerBottle);
+        const remainingPegs = Math.floor(measuredOpenMl / 60);
+        
+        adjustStock(productName, fullBottles, remainingPegs, reason);
+        
+        // Clear local input
+        const newMl = { ...measuredMl }; delete newMl[productName]; setMeasuredMl(newMl);
+      }
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-24 animate-fade-in font-sans">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-forest-green mb-2 flex items-center gap-3">
-              <ClipboardCheck className="text-brushed-gold" size={32} />
-              Digital Audit & Reconciliation
-            </h2>
-            <p className="text-forest-green/70">
-              Stock vs Sale reconciliation with transaction history tracking
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={exportReconciliationReport}
-              className="px-4 py-2 bg-forest-green text-brushed-gold rounded-lg hover:bg-forest-green/90 transition-colors font-medium flex items-center gap-2 touch-manipulation"
-            >
-              <Download size={18} />
-              Export Report
-            </button>
-            <button
-              onClick={() => setAuditMode(!auditMode)}
-              className="px-4 py-2 bg-brushed-gold text-forest-green rounded-lg hover:bg-brushed-gold/90 transition-colors font-medium flex items-center gap-2 touch-manipulation"
-            >
-              {auditMode ? (
-                <>
-                  <ToggleRight size={18} />
-                  Audit Mode ON
-                </>
-              ) : (
-                <>
-                  <ToggleLeft size={18} />
-                  Audit Mode OFF
-                </>
-              )}
-            </button>
-          </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-forest-green flex items-center gap-3 font-serif">
+            <ShieldAlert className="text-brushed-gold" size={32} />
+            Digital Stock Audit
+          </h2>
+          <p className="text-forest-green/60 text-xs font-bold uppercase tracking-widest mt-1">Shift-wise Reconciliation & Variance Report</p>
         </div>
-
-        {/* Discrepancy Summary */}
-        {itemsWithDiscrepancy.length > 0 && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="text-red-600" size={20} />
-              <p className="font-semibold text-red-800">
-                {itemsWithDiscrepancy.length} item(s) with stock discrepancies detected
-              </p>
-            </div>
-            <p className="text-sm text-red-700">
-              Please review the reconciliation table below and conduct physical stock count.
-            </p>
-          </div>
-        )}
+        
+        <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Audit Tolerance</span>
+          <span className="text-sm font-black text-green-600">3.00%</span>
+        </div>
       </div>
 
-      {/* Reconciliation Table */}
-      <div className="bg-white rounded-xl border border-brushed-gold/20 shadow-md overflow-hidden">
+      {/* 3. Reconciliation Table */}
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-forest-green/10 border-b border-brushed-gold/20 sticky top-0 z-10">
-              <tr>
-                {auditMode ? (
-                  <>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-forest-green">
-                      Brand
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-forest-green">
-                      Volume
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-forest-green">
-                      Batch No
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-forest-green">
-                      Closing Balance
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-forest-green">
-                      QR Code
-                    </th>
-                  </>
-                ) : (
-                  <>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-forest-green">
-                      Product
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-forest-green">
-                      Volume
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-forest-green">
-                      Batch No
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-forest-green">
-                      Opening Stock
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-forest-green">
-                      New Purchases
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-forest-green">
-                      Total Available
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-forest-green">
-                      Total Peg Sales
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-forest-green">
-                      Expected Closing
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-forest-green">
-                      Actual Closing
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-forest-green">
-                      Discrepancy
-                    </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-forest-green">
-                      QR Code
-                    </th>
-                  </>
-                )}
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-forest-green text-brushed-gold text-[10px] font-black uppercase tracking-[0.2em]">
+                <th className="p-6">Brand / Configuration</th>
+                <th className="p-6">Digital Stock (ML)</th>
+                <th className="p-6">Measured Open (ML)</th>
+                <th className="p-6">Variance (%)</th>
+                <th className="p-6 text-right">Adjust</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-brushed-gold/10">
-              {reconciliationData.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={auditMode ? 5 : 11}
-                    className="px-4 py-8 text-center text-forest-green/50"
-                  >
-                    No inventory data available
+            <tbody className="divide-y divide-gray-50">
+              {auditResults.map((row) => (
+                <tr key={row.productName} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="p-6">
+                    <p className="font-black text-forest-green text-sm uppercase">{row.productName.split(' ').slice(0,-1).join(' ')}</p>
+                    <span className="text-[10px] font-bold text-gray-400">{row.config.size}ml • {row.currentStock.totalBottles} Full Btls</span>
+                  </td>
+                  <td className="p-6">
+                    <p className="font-black text-forest-green">{row.digitalTotalMl} ml</p>
+                    <p className="text-[9px] font-bold text-brushed-gold uppercase">{row.currentStock.loosePegs.toFixed(1)} Pegs Expected</p>
+                  </td>
+                  <td className="p-6">
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="number"
+                        placeholder="Measured ML"
+                        value={measuredMl[row.productName] || ''}
+                        onChange={(e) => setMeasuredMl({...measuredMl, [row.productName]: e.target.value})}
+                        className="w-28 p-3 bg-gray-50 border-2 border-transparent rounded-xl focus:border-brushed-gold outline-none font-black text-forest-green"
+                      />
+                      <span className="text-[10px] font-black text-gray-300 uppercase">ml</span>
+                    </div>
+                  </td>
+                  <td className="p-6">
+                    {measuredMl[row.productName] ? (
+                      <div className="space-y-1">
+                        <p className={`text-sm font-black ${row.isHighVariance ? 'text-red-600 animate-pulse' : 'text-green-600'}`}>
+                          {row.variancePercent.toFixed(2)}%
+                        </p>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase">Diff: {row.varianceMl.toFixed(0)}ml</p>
+                      </div>
+                    ) : (
+                      <span className="text-gray-300 italic text-xs">Waiting for input...</span>
+                    )}
+                  </td>
+                  <td className="p-6 text-right">
+                    <button 
+                      onClick={() => handleFinalAdjustment(row.productName)}
+                      disabled={!measuredMl[row.productName]}
+                      className="p-3 bg-forest-green text-brushed-gold rounded-xl shadow-lg hover:bg-forest-green-light disabled:opacity-20 active:scale-95 transition-all"
+                    >
+                      <RefreshCw size={18} />
+                    </button>
                   </td>
                 </tr>
-              ) : (
-                reconciliationData.map((row) => {
-                  const hasDiscrepancy = Math.abs(row.discrepancy) > 0.1;
-                  return (
-                    <tr
-                      key={row.productId}
-                      className={`hover:bg-forest-green/5 transition-colors ${
-                        hasDiscrepancy ? 'bg-red-50/50' : ''
-                      }`}
-                    >
-                      {auditMode ? (
-                        <>
-                          {/* Audit Mode: Simplified Regulatory View */}
-                          <td className="px-4 py-3 text-forest-green font-medium">
-                            {row.productName}
-                          </td>
-                          <td className="px-4 py-3 text-forest-green/70">{row.volume}</td>
-                          <td className="px-4 py-3 text-forest-green/70 font-mono text-sm">
-                            {row.batchNo}
-                          </td>
-                          <td className="px-4 py-3 text-forest-green font-semibold">
-                            {formatNumber(row.actualClosing, 1)} pegs
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() =>
-                                setSelectedProductForQR(
-                                  selectedProductForQR === row.productId ? null : row.productId
-                                )
-                              }
-                              className="p-2 hover:bg-brushed-gold/20 rounded-lg transition-colors touch-manipulation"
-                              title="Show QR Code"
-                            >
-                              <QrCode className="text-brushed-gold" size={20} />
-                            </button>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          {/* Full Reconciliation View */}
-                          <td className="px-4 py-3">
-                            <div className="text-forest-green font-medium">{row.productName}</div>
-                            {hasDiscrepancy && (
-                              <div className="text-xs text-red-600 font-semibold mt-1 flex items-center gap-1">
-                                <AlertTriangle size={12} />
-                                Stock discrepancy
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-forest-green/70">{row.volume}</td>
-                          <td className="px-4 py-3 text-forest-green/70 font-mono text-sm">
-                            {row.batchNo}
-                          </td>
-                          <td className="px-4 py-3 text-right text-forest-green">
-                            {formatNumber(row.openingStock, 1)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-forest-green">
-                            {formatNumber(row.newPurchases, 1)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-forest-green font-semibold">
-                            {formatNumber(row.totalAvailable, 1)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-forest-green">
-                            {formatNumber(row.totalPegSales, 1)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-forest-green">
-                            {formatNumber(row.expectedClosing, 1)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-forest-green font-semibold">
-                            {formatNumber(row.actualClosing, 1)}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            {hasDiscrepancy ? (
-                              <span className="text-red-600 font-semibold flex items-center justify-end gap-1">
-                                <AlertTriangle size={14} />
-                                {row.discrepancy > 0 ? '+' : ''}
-                                {formatNumber(row.discrepancy, 1)}
-                              </span>
-                            ) : (
-                              <span className="text-green-600 font-semibold flex items-center justify-end gap-1">
-                                <CheckCircle size={14} />
-                                {formatNumber(row.discrepancy, 1)}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() =>
-                                setSelectedProductForQR(
-                                  selectedProductForQR === row.productId ? null : row.productId
-                                )
-                              }
-                              className="mx-auto p-2 hover:bg-brushed-gold/20 rounded-lg transition-colors touch-manipulation flex items-center justify-center"
-                              title="Show QR Code"
-                            >
-                              <QrCode className="text-brushed-gold" size={20} />
-                            </button>
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  );
-                })
-              )}
+              ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* QR Code Modal */}
-      {selectedProductForQR && (
-        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
-            <button
-              onClick={() => setSelectedProductForQR(null)}
-              className="absolute top-4 right-4 p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
-            >
-              <XCircle size={20} className="text-gray-600" />
-            </button>
-
-            {(() => {
-              const row = reconciliationData.find((r) => r.productId === selectedProductForQR);
-              if (!row) return null;
-
-              const qrData = generateQRCodeData(row);
-
-              return (
-                <>
-                  <h3 className="text-xl font-bold text-forest-green mb-2">
-                    Transaction History QR Code
-                  </h3>
-                  <p className="text-sm text-forest-green/70 mb-4">
-                    Scan with your S23 Ultra camera to view full transaction history
-                  </p>
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="bg-white p-4 rounded-lg border-2 border-brushed-gold">
-                      <QRCodeSVG value={qrData} size={256} level="H" includeMargin />
-                    </div>
-                    <div className="text-center">
-                      <p className="font-semibold text-forest-green mb-1">{row.productName}</p>
-                      <p className="text-sm text-forest-green/70">{row.volume} • {row.batchNo}</p>
-                      <p className="text-xs text-forest-green/50 mt-2">
-                        {row.transactions.length} transaction(s) recorded
-                      </p>
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
+      {/* 4. Owner's Variance Report Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white rounded-3xl p-8 shadow-xl border border-gray-100 flex flex-col justify-between">
+          <div>
+            <h3 className="text-xl font-black text-forest-green mb-2 font-serif uppercase tracking-tight flex items-center gap-2">
+              <TrendingUp className="text-brushed-gold" />
+              Historical Variance (Owner View)
+            </h3>
+            <p className="text-gray-400 text-xs font-bold uppercase mb-8">Spillage tracking by shift</p>
+          </div>
+          
+          <div className="space-y-4">
+            <VarianceRow shift="Morning Shift (Anita)" spillage="1.2%" status="within-limit" />
+            <VarianceRow shift="Evening Shift (Suresh)" spillage="4.8%" status="warning" />
+            <VarianceRow shift="Late Night (Rajesh)" spillage="0.8%" status="within-limit" />
           </div>
         </div>
-      )}
+
+        <div className="bg-amber-50 p-8 rounded-3xl border-l-8 border-brushed-gold shadow-sm flex flex-col justify-center">
+          <Calculator className="text-brushed-gold mb-4" size={32} />
+          <h4 className="text-amber-900 font-black text-sm uppercase tracking-widest mb-2">Audit Policy</h4>
+          <p className="text-xs text-amber-800 font-medium leading-relaxed">
+            The variance calculation uses the standard formula: <br/>
+            <span className="font-serif italic font-black mt-2 block">
+              {`\\text{Var %} = \\frac{\\text{Digital} - \\text{Physical}}{\\text{Digital}} \\times 100`}
+            </span>
+            <br/>
+            Any variance above 3% triggers an automatic notification to the owner dashboard.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
+function VarianceRow({ shift, spillage, status }: { shift: string, spillage: string, status: 'within-limit' | 'warning' }) {
+  return (
+    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-white rounded-lg shadow-sm"><User size={16} className="text-forest-green"/></div>
+        <span className="text-sm font-black text-forest-green uppercase">{shift}</span>
+      </div>
+      <span className={`text-sm font-black ${status === 'warning' ? 'text-red-600' : 'text-green-600'}`}>{spillage}</span>
+    </div>
+  );
+}

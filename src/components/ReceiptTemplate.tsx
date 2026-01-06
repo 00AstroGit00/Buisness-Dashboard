@@ -60,26 +60,11 @@ export default function ReceiptTemplate({ data }: ReceiptTemplateProps) {
           paddingBottom: '10px',
         }}
       >
-        <img
-          src="/Buisiness-Branding-Elements/dashboard_assets/assets/images/logo-with-branding.png"
-          alt="Deepa Restaurant Logo"
-          style={{
-            maxWidth: '60px',
-            height: 'auto',
-            marginBottom: '6px',
-            display: 'block',
-          }}
-          onError={(e) => {
-            // Fallback: Show text if logo doesn't load
-            const img = e.target as HTMLImageElement;
-            img.style.display = 'none';
-            const fallback = document.createElement('div');
-            fallback.innerHTML = '🏨';
-            fallback.style.fontSize = '32px';
-            fallback.style.marginBottom = '6px';
-            img.parentNode?.insertBefore(fallback, img.nextSibling);
-          }}
-        />
+              <img 
+                src="/assets/images/logo-with-branding.png" 
+                alt="Logo" 
+                className="h-16 w-auto mx-auto mb-2 opacity-80 grayscale contrast-125"
+              />
         <h1
           style={{
             fontSize: '16px',

@@ -14,7 +14,7 @@ export default defineConfig({
         short_name: 'Deepa',
         description: 'Professional management dashboard for Deepa Restaurant & Tourist Home',
         theme_color: '#0a3d31', // Forest Green
-        background_color: '#0a3d31',
+        background_color: '#ffffff', // White
         display: 'standalone',
         orientation: 'portrait',
         icons: [
@@ -53,6 +53,7 @@ export default defineConfig({
     })
   ],
   cacheDir: './.vite_cache', // Prevent Windows 11 from locking node_modules
+  clearScreen: false, // Prevent Vite from clearing the terminal screen
   server: {
     host: true, // Expose to local network for mobile access
     port: 5173,
@@ -76,13 +77,16 @@ export default defineConfig({
     },
     // Code splitting and chunking
     rollupOptions: {
+      external: [
+        /\/Buisiness-Branding-Elements\//,
+      ],
       output: {
         // Manual chunk splitting for optimal loading
         manualChunks: {
           // Vendor chunks
           'react-vendor': ['react', 'react-dom'],
-          'ui-vendor': ['lucide-react'],
-          'chart-vendor': ['recharts'],
+          'ui-vendor': ['lucide-react'], // Individual chunk for tree-shaking optimization
+          'chart-vendor': ['recharts'], // Separate chunk for heavy chart logic
           'utils-vendor': ['xlsx', 'file-saver'],
           'state-vendor': ['zustand'],
           // Feature chunks
@@ -128,6 +132,7 @@ export default defineConfig({
   },
   // Optimize dependencies
   optimizeDeps: {
+    entries: ['./index.html', './src/main.tsx'],
     include: [
       'react',
       'react-dom',
@@ -135,6 +140,6 @@ export default defineConfig({
       'zustand',
       'recharts',
     ],
-    exclude: ['liquorCalculator.worker.ts'], // Exclude workers from optimization
+    exclude: ['liquorCalculator.worker.ts', 'Buisiness-Branding-Elements'], // Exclude workers from optimization
   },
 })
