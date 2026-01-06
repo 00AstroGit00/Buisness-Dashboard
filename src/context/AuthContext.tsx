@@ -1,5 +1,6 @@
 /**
  * Enhanced Authentication Context with WebAuthn Support
+ * Replace your existing AuthContext.tsx with this version
  * Adds fingerprint authentication and security logging
  */
 
@@ -126,15 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Accountant access rules
     if (user.role === 'accountant') {
-      const accountantPages = [
-        'dashboard', 
-        'inventory', 
-        'purchases', 
-        'accounting', 
-        'endofday', 
-        'excise',
-        'system'
-      ];
+      const accountantPages = ['dashboard', 'inventory', 'purchases', 'accounting', 'endofday', 'excise'];
       return accountantPages.includes(page);
     }
 
@@ -166,3 +159,4 @@ export function useAuth() {
   }
   return context;
 }
+
