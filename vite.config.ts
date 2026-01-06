@@ -70,6 +70,9 @@ export default defineConfig({
     strictPort: false,
     // Automatically open network URL in console
     open: false,
+    watch: {
+      ignored: ['**/Buisiness-Branding-Elements/**'],
+    },
   },
   build: {
     // Optimize for fast initial load (< 1.5s on Samsung S23 Ultra)
