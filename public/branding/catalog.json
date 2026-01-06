@@ -1,0 +1,62 @@
+{
+    "assets": [
+        {
+            "original": "Business_Brousures_Catalogs.jpg",
+            "variants": [
+                {
+                    "format": "webp",
+                    "path": "./processed_assets\\Business_Brousures_Catalogs.webp"
+                },
+                {
+                    "width": 480,
+                    "path": "./processed_assets\\Business_Brousures_Catalogs_480w.jpg"
+                },
+                {
+                    "width": 800,
+                    "path": "./processed_assets\\Business_Brousures_Catalogs_800w.jpg"
+                },
+                {
+                    "width": 1200,
+                    "path": "./processed_assets\\Business_Brousures_Catalogs_1200w.jpg"
+                }
+            ],
+            "palette": [
+                "#dcd3bd",
+                "#2e3f32",
+                "#826c53",
+                "#5c7a6c",
+                "#92aa93",
+                "#929a9c"
+            ]
+        },
+        {
+            "original": "Business_Visiting_Card.jpg",
+            "variants": [
+                {
+                    "format": "webp",
+                    "path": "./processed_assets\\Business_Visiting_Card.webp"
+                },
+                {
+                    "width": 480,
+                    "path": "./processed_assets\\Business_Visiting_Card_480w.jpg"
+                },
+                {
+                    "width": 800,
+                    "path": "./processed_assets\\Business_Visiting_Card_800w.jpg"
+                },
+                {
+                    "width": 1200,
+                    "path": "./processed_assets\\Business_Visiting_Card_1200w.jpg"
+                }
+            ],
+            "palette": [
+                "#292a20",
+                "#775c47",
+                "#c5ab70",
+                "#929c7f",
+                "#5b654b",
+                "#8e9484"
+            ]
+        }
+    ]
+}
