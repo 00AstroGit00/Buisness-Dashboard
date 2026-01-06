@@ -22,7 +22,7 @@ const SecurityLog = lazy(() => import('./SecurityLog'));
 const MaintenanceDashboard = lazy(() => import('./MaintenanceDashboard'));
 const EndOfDay = lazy(() => import('./EndOfDay'));
 const ExciseReport = lazy(() => import('./ExciseReport'));
-const SystemHealth = lazy(() => import('./SystemHealth'));
+const Settings = lazy(() => import('./Settings'));
 
 // ✅ Lazy Load Less-Critical Shared Components
 const EmergencyLock = lazy(() => import('./EmergencyLock'));
@@ -33,7 +33,7 @@ import Sidebar from './Sidebar';
 import BottomNavigation from './BottomNavigation';
 import PrivacyModeToggle from './PrivacyModeToggle';
 
-type Page = 'dashboard' | 'rooms' | 'inventory' | 'accounting' | 'employees' | 'compliance' | 'billing' | 'purchases' | 'analytics' | 'audit' | 'backup' | 'security-log' | 'maintenance' | 'endofday' | 'excise' | 'system';
+type Page = 'dashboard' | 'rooms' | 'inventory' | 'accounting' | 'employees' | 'compliance' | 'billing' | 'purchases' | 'analytics' | 'audit' | 'backup' | 'security-log' | 'maintenance' | 'endofday' | 'excise' | 'system' | 'settings';
 
 export default function Dashboard() {
   const { user, logout, hasAccess } = useAuth();
@@ -66,7 +66,7 @@ export default function Dashboard() {
       case 'maintenance': return <MaintenanceDashboard />;
       case 'endofday': return <EndOfDay />;
       case 'excise': return <ExciseReport />;
-      case 'system': return <SystemHealth />;
+      case 'settings': return <Settings />;
       default: return <DashboardOverview />;
     }
   };

@@ -166,3 +166,39 @@ export function getRetentionRecommendations(): {
   };
 }
 
+/**
+ * Maintenance Mode: Clear old logs and temporary data
+ * Targeted at security logs and redundant historical markers
+ */
+export function performSystemMaintenance(): { logsRemoved: number; spaceFreed: number } {
+  const SECURITY_LOG_KEY = 'deepa_security_log';
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+  
+  let logsRemoved = 0;
+  let spaceFreed = 0;
+
+  try {
+    const rawLogs = localStorage.getItem(SECURITY_LOG_KEY);
+    if (rawLogs) {
+      const logs = JSON.parse(rawLogs);
+      const initialSize = rawLogs.length;
+      
+      const filteredLogs = logs.filter((log: any) => {
+        const timestamp = new Date(log.timestamp).getTime();
+        return timestamp > thirtyDaysAgo;
+      });
+
+      logsRemoved = logs.length - filteredLogs.length;
+      const finalRaw = JSON.stringify(filteredLogs);
+      spaceFreed = (initialSize - finalRaw.length) / 1024; // KB
+
+      localStorage.setItem(SECURITY_LOG_KEY, finalRaw);
+    }
+  } catch (err) {
+    console.error('Maintenance failed:', err);
+  }
+
+  console.log(`🧹 Maintenance Complete: ${logsRemoved} logs removed, ${spaceFreed.toFixed(2)} KB freed.`);
+  return { logsRemoved, spaceFreed };
+}
+

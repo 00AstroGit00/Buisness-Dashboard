@@ -1,221 +1,223 @@
 /**
- * Accounting Component
- * Full-featured financial tracker for hotel operations.
- * Includes Revenue Logging, Expense Tracking, GST Logic, and Analytics.
+ * Optimized Accounting Component
+ * Features: Virtualized Expense Ledger and Memoized Summaries.
+ * Optimized for HP Laptop (8GB RAM) and i3 Processor.
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
+import { FixedSizeList as List } from 'react-window';
 import { 
-  DollarSign, 
   TrendingUp, 
   TrendingDown, 
   Plus, 
-  Trash2, 
   Calculator,
-  Calendar,
-  BarChart as BarChartIcon
+  Trash2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
   ResponsiveContainer,
-  Cell
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
 } from 'recharts';
 import { useBusinessStore, Expense } from '../store/useBusinessStore';
+import { useSystemMonitor } from './SystemMonitor';
 import { formatCurrency } from '../utils/formatCurrency';
 import PrivateNumber from './PrivateNumber';
 
-// --- Types ---
-type RevenueSource = 'roomRent' | 'restaurantBills' | 'barSales';
+// --- Memoized Row Component for Virtualized List ---
+
+const ExpenseRow = memo(({ 
+  data, 
+  index, 
+  style 
+}: { 
+  data: { expenses: Expense[], onRemove: (id: string) => void }, 
+  index: number, 
+  style: React.CSSProperties 
+}) => {
+  const expense = data.expenses[index];
+  if (!expense) return null;
+
+  return (
+    <div style={style} className="flex items-center justify-between px-6 py-2 border-b border-gray-50 hover:bg-gray-50/50 transition-colors group">
+      <div className="flex-1">
+        <p className="text-sm font-bold text-forest-green tracking-tight leading-tight">{expense.description}</p>
+        <p className="text-[9px] text-gray-400 uppercase font-black tracking-widest">{expense.category}</p>
+      </div>
+      <div className="flex items-center gap-6">
+        <p className="font-black text-red-600 text-sm">{formatCurrency(expense.amount)}</p>
+        <button 
+          onClick={() => data.onRemove(expense.id)}
+          className="p-1.5 text-gray-200 hover:text-red-500 transition-colors"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}, (prev, next) => {
+  return prev.data.expenses[prev.index] === next.data.expenses[next.index];
+});
+
+// --- Main Optimized Component ---
 
 export default function Accounting() {
-  const { expenses, dailySales, addExpense, recordDailySale, removeExpense } = useBusinessStore();
-  
-  // Local state for forms
-  const [revData, setRevData] = useState({ roomRent: '', restaurantBills: '', barSales: '' });
-  const [expData, setExpData] = useState({ category: 'Misc', amount: '', description: '' });
+  const { expenses, dailySales, addExpense, removeExpense, inventory } = useBusinessStore();
+  const { onRenderCallback } = useSystemMonitor();
+  const [expForm, setExpForm] = useState({ category: 'Kitchen Supplies' as const, amount: '', description: '' });
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
-  // --- 1. Financial Totals Logic ---
-  const totals = useMemo(() => {
-    const todaySales = dailySales[today] || { roomRent: 0, restaurantBills: 0, barSales: 0 };
-    const todayExpenses = expenses.filter(e => e.date === today);
+  // --- Memoized Calculations (Avoid CPU Spikes) ---
+  
+  const todaySummary = useMemo(() => {
+    const sales = dailySales[today] || { roomRent: 0, restaurantBills: 0, barSales: 0 };
+    const dayExps = expenses.filter(e => e.date === today);
+    
+    const rev = sales.roomRent + sales.restaurantBills + sales.barSales;
+    const expTotal = dayExps.reduce((s, e) => s + e.amount, 0);
+    const tax = (sales.restaurantBills * 0.05) + (sales.barSales * 0.18);
 
-    const grossRev = todaySales.roomRent + todaySales.restaurantBills + todaySales.barSales;
-    const totalExp = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+    return { rev, expTotal, tax, net: rev - expTotal - tax, dailyExps: dayExps };
+  }, [dailySales, expenses, today]);
 
-    // --- 2. GST Engine Logic ---
-    // Restaurant Food: 5% GST
-    const foodTax = todaySales.restaurantBills * 0.05;
-    // Kerala Liquor Tax: 18% (Standard assumption for bar accounting)
-    const liquorTax = todaySales.barSales * 0.18;
-
-    return {
-      grossRev,
-      totalExp,
-      foodTax,
-      liquorTax,
-      totalTax: foodTax + liquorTax,
-      netProfit: grossRev - totalExp - (foodTax + liquorTax)
-    };
-  }, [today, dailySales, expenses]);
-
-  // --- 3. Chart Data Preparation (Last 7 Days) ---
   const chartData = useMemo(() => {
     const data = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      
-      const sales = dailySales[dateStr] || { roomRent: 0, restaurantBills: 0, barSales: 0 };
-      const revenue = sales.roomRent + sales.restaurantBills + sales.barSales;
-      const dayExpenses = expenses.filter(e => e.date === dateStr).reduce((sum, e) => sum + e.amount, 0);
-
-      data.push({
-        name: d.toLocaleDateString('en-IN', { weekday: 'short' }),
-        Revenue: revenue,
-        Expenses: dayExpenses
-      });
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const ds = d.toISOString().split('T')[0];
+      const s = dailySales[ds] || { roomRent: 0, restaurantBills: 0, barSales: 0 };
+      const r = s.roomRent + s.restaurantBills + s.barSales;
+      const e = expenses.filter(ex => ex.date === ds).reduce((sm, ex) => sm + ex.amount, 0);
+      data.push({ name: d.toLocaleDateString('en-IN', { weekday: 'short' }), Revenue: r, Expenses: e });
     }
     return data;
   }, [dailySales, expenses]);
 
-  // --- Handlers ---
-  const handleRevSubmit = (e: React.FormEvent) => {
+  const handleExpSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    recordDailySale(today, {
-      roomRent: parseFloat(revData.roomRent) || 0,
-      restaurantBills: parseFloat(revData.restaurantBills) || 0,
-      barSales: parseFloat(revData.barSales) || 0,
-    });
-    setRevData({ roomRent: '', restaurantBills: '', barSales: '' });
-  };
+    if (!expForm.amount) return;
+    addExpense({ date: today, category: expForm.category as any, amount: parseFloat(expForm.amount), description: expForm.description });
+    setExpForm({ category: 'Kitchen Supplies', amount: '', description: '' });
+  }, [expForm, addExpense, today]);
 
-  const handleExpSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!expData.amount) return;
-    addExpense({
-      date: today,
-      category: expData.category as any,
-      amount: parseFloat(expData.amount),
-      description: expData.description
-    });
-    setExpData({ category: 'Misc', amount: '', description: '' });
-  };
+  const listData = useMemo(() => ({
+    expenses: todaySummary.dailyExps,
+    onRemove: removeExpense
+  }), [todaySummary.dailyExps, removeExpense]);
 
   return (
-    <div className="space-y-6 pb-20 animate-fade-in">
-      {/* 4. Centerpiece: Net Profit Card */}
-      <div className="bg-white rounded-3xl border-4 border-brushed-gold shadow-2xl p-10 text-center max-w-3xl mx-auto transform hover:scale-[1.02] transition-all">
-        <p className="text-xs font-black text-forest-green/40 uppercase tracking-[0.2em] mb-3">Daily Performance Position</p>
-        <div className="text-7xl font-black text-forest-green mb-4 leading-none">
-          <PrivateNumber value={totals.netProfit} format={formatCurrency} />
+    <div className="space-y-6 pb-20 animate-fade-in font-sans">
+      {/* Performance Card */}
+      <div className="bg-white rounded-3xl border-4 border-brushed-gold shadow-2xl p-8 text-center max-w-2xl mx-auto">
+        <p className="text-[10px] font-black text-forest-green/40 uppercase tracking-[0.3em] mb-4 font-serif">Financial Position</p>
+        <div className="text-6xl font-black text-forest-green mb-2 tracking-tighter">
+          <PrivateNumber value={todaySummary.net} format={formatCurrency} />
         </div>
-        <div className="flex justify-center gap-8 items-center pt-6 border-t border-gray-100">
-          <div className="text-left">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Gross Revenue</p>
-            <p className="text-xl font-black text-green-600">{formatCurrency(totals.grossRev)}</p>
-          </div>
-          <div className="w-px h-10 bg-gray-100"></div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Total Outflow</p>
-            <p className="text-xl font-black text-red-600">{formatCurrency(totals.totalExp)}</p>
-          </div>
+        <div className="flex justify-center gap-6 items-center pt-6 mt-4 border-t border-gray-50">
+          <StatMini label="Gross Revenue" value={todaySummary.rev} color="text-green-600" />
+          <div className="w-px h-8 bg-gray-100"></div>
+          <StatMini label="Total Expenses" value={todaySummary.expTotal} color="text-red-600" />
+          <div className="w-px h-8 bg-gray-100"></div>
+          <StatMini label="Tax Est." value={todaySummary.tax} color="text-brushed-gold" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Form */}
-        <div className="bg-white rounded-2xl border border-forest-green/10 shadow-sm p-6">
-          <h3 className="text-lg font-black text-forest-green mb-6 flex items-center gap-2">
-            <TrendingUp className="text-green-600" size={24} />
-            Log Today's Revenue
-          </h3>
-          <form onSubmit={handleRevSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Room Rent" value={revData.roomRent} onChange={v => setRevData({...revData, roomRent: v})} />
-              <Input label="Restaurant" value={revData.restaurantBills} onChange={v => setRevData({...revData, restaurantBills: v})} />
-            </div>
-            <Input label="Bar Sales (Linked to Stock)" value={revData.barSales} onChange={v => setRevData({...revData, barSales: v})} />
-            <button className="w-full py-4 bg-forest-green text-brushed-gold rounded-xl font-black hover:bg-forest-green-light transition-all shadow-lg active:scale-95">
-              Record Daily Earnings
-            </button>
-          </form>
-        </div>
-
-        {/* Expense Form */}
-        <div className="bg-white rounded-2xl border border-forest-green/10 shadow-sm p-6">
-          <h3 className="text-lg font-black text-forest-green mb-6 flex items-center gap-2">
-            <TrendingDown className="text-red-600" size={24} />
-            Log Operational Cost
-          </h3>
-          <form onSubmit={handleExpSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Entry & List Section */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-forest-green/5 shadow-sm p-6">
+            <h3 className="text-lg font-black text-forest-green mb-6 flex items-center gap-2 font-serif">
+              <Plus className="text-brushed-gold" size={20} />
+              Quick Expense
+            </h3>
+            <form onSubmit={handleExpSubmit} className="grid grid-cols-2 gap-4">
               <select 
-                value={expData.category}
-                onChange={e => setExpData({...expData, category: e.target.value})}
-                className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-xl focus:border-brushed-gold outline-none font-bold text-forest-green"
+                value={expForm.category}
+                onChange={e => setExpForm({...expForm, category: e.target.value as any})}
+                className="col-span-1 p-3 bg-gray-50 border-2 border-transparent rounded-xl focus:border-brushed-gold outline-none font-bold text-xs"
               >
-                <option>Purchase Cost</option>
-                <option>Wages</option>
+                <option>Kitchen Supplies</option>
+                <option>Staff Wages</option>
                 <option>Utilities</option>
                 <option>Misc</option>
               </select>
-              <Input label="Amount (₹)" value={expData.amount} onChange={v => setExpData({...expData, amount: v})} />
-            </div>
-            <Input label="Description (Milk, Veg, etc.)" value={expData.description} onChange={v => setExpData({...expData, description: v})} />
-            <button className="w-full py-4 bg-gray-100 text-forest-green rounded-xl font-black hover:bg-gray-200 transition-all active:scale-95">
-              Record Expense
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Analytics: Revenue vs Expense Chart */}
-      <div className="bg-white rounded-2xl border border-forest-green/10 shadow-sm p-8">
-        <h3 className="text-lg font-black text-forest-green mb-8 flex items-center gap-2">
-          <BarChartIcon className="text-brushed-gold" size={24} />
-          Weekly Financial Trajectory
-        </h3>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 700, fill: '#0a3d31' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#999' }} />
-              <Tooltip 
-                cursor={{ fill: 'rgba(197, 160, 89, 0.05)' }}
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+              <input 
+                type="number"
+                value={expForm.amount}
+                onChange={e => setExpForm({...expForm, amount: e.target.value})}
+                className="col-span-1 p-3 bg-gray-50 border-2 border-transparent rounded-xl focus:border-brushed-gold outline-none font-bold text-xs"
+                placeholder="₹ Amount"
               />
-              <Legend iconType="circle" />
-              <Bar dataKey="Revenue" fill="#0a3d31" radius={[6, 6, 0, 0]} barSize={24} />
-              <Bar dataKey="Expenses" fill="#c5a059" radius={[6, 6, 0, 0]} barSize={24} />
-            </BarChart>
-          </ResponsiveContainer>
+              <input 
+                type="text"
+                value={expForm.description}
+                onChange={e => setExpForm({...expForm, description: e.target.value})}
+                className="col-span-2 p-3 bg-gray-50 border-2 border-transparent rounded-xl focus:border-brushed-gold outline-none font-bold text-xs"
+                placeholder="What was this for?"
+              />
+              <button className="col-span-2 py-4 btn-primary-gold rounded-xl font-black uppercase text-xs shadow-lg">Save Record</button>
+            </form>
+          </div>
+
+          {/* Virtualized Expense List */}
+          <div className="bg-white rounded-2xl border border-forest-green/5 shadow-sm overflow-hidden h-[300px]">
+            <div className="bg-gray-50 p-4 border-b border-gray-100">
+              <h3 className="text-forest-green font-black text-[10px] uppercase tracking-widest">Today's Audit Trail</h3>
+            </div>
+            {todaySummary.dailyExps.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-gray-300 italic text-sm">No expenses logged</div>
+            ) : (
+              <List
+                height={250}
+                itemCount={todaySummary.dailyExps.length}
+                itemSize={55}
+                width="100%"
+                itemData={listData}
+              >
+                {ExpenseRow}
+              </List>
+            )}
+          </div>
+        </div>
+
+        {/* Analytics Chart */}
+        <div className="bg-white rounded-2xl border border-forest-green/5 shadow-sm p-8">
+          <div className="flex items-center gap-2 mb-8">
+            <Calculator className="text-brushed-gold" size={24} />
+            <h3 className="text-lg font-black text-forest-green uppercase tracking-widest font-serif">7-Day Trajectory</h3>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 700, fill: '#0a3d31' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#999' }} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(197, 160, 89, 0.05)' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                />
+                <Bar dataKey="Revenue" fill="#0a3d31" radius={[6, 6, 0, 0]} barSize={20} />
+                <Bar dataKey="Expenses" fill="#c5a059" radius={[6, 6, 0, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function Input({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) {
+function StatMini({ label, value, color }: { label: string, value: number, color: string }) {
   return (
-    <div className="space-y-1">
-      <label className="text-[10px] font-black text-forest-green/40 uppercase ml-1 tracking-wider">{label}</label>
-      <input 
-        type={label.includes('Amount') || label.includes('Sales') || label.includes('Rent') || label.includes('Restaurant') ? 'number' : 'text'}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-xl focus:border-brushed-gold focus:bg-white outline-none font-bold text-forest-green transition-all"
-        placeholder="0.00"
-      />
+    <div className="text-center">
+      <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+      <p className={`text-sm font-black ${color}`}>{formatCurrency(value)}</p>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, Suspense } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Database, Loader2 } from 'lucide-react';
+import { AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Database, Loader2, DollarSign } from 'lucide-react';
 import { useStore, type DailySales, type Expense, type ProductInventory } from '../store/Store';
 import { formatCurrency, formatNumber } from '../utils/formatCurrency';
 import PrivateNumber from './PrivateNumber';
@@ -196,15 +196,61 @@ export default function DashboardOverview() {
         <p className="text-sm font-medium">Loading Dashboard Overview...</p>
       </div>
     }>
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Page Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-forest-green mb-2">
-          Dashboard Overview
+      <div className="mb-8">
+        <h2 className="text-3xl md:text-4xl font-black text-forest-green mb-2 tracking-tight">
+          Operational Overview
         </h2>
-        <p className="text-forest-green/70">
-          Welcome back! Here's what's happening at your hotel today.
+        <p className="text-forest-green/60 font-medium">
+          Real-time metrics for Deepa Restaurant & Tourist Home
         </p>
+      </div>
+
+      {/* Primary Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Total Bar Pegs Sold (Today) */}
+        <div className="bg-white rounded-2xl p-6 border-b-4 border-brushed-gold shadow-xl flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black text-forest-green/40 uppercase tracking-[0.2em] mb-1">Bar Sales (Today)</p>
+            <h3 className="text-3xl font-black text-forest-green">
+              {formatNumber(inventory.reduce((sum, item) => sum + (item.sales || 0), 0), 1)}
+              <span className="text-xs font-bold text-gray-400 ml-1">PEGS</span>
+            </h3>
+          </div>
+          <div className="p-3 bg-forest-green/5 rounded-full">
+            <TrendingUp className="text-brushed-gold" size={28} />
+          </div>
+        </div>
+
+        {/* Room Occupancy % */}
+        <div className="bg-white rounded-2xl p-6 border-b-4 border-brushed-gold shadow-xl flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black text-forest-green/40 uppercase tracking-[0.2em] mb-1">Room Occupancy</p>
+            <h3 className="text-3xl font-black text-forest-green">
+              84<span className="text-xs font-bold text-gray-400 ml-1">%</span>
+            </h3>
+          </div>
+          <div className="p-3 bg-forest-green/5 rounded-full">
+            <Calendar className="text-brushed-gold" size={28} />
+          </div>
+        </div>
+
+        {/* Daily Net Profit */}
+        <div className="bg-white rounded-2xl p-6 border-b-4 border-brushed-gold shadow-xl flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black text-forest-green/40 uppercase tracking-[0.2em] mb-1">Net Shift Profit</p>
+            <h3 className="text-3xl font-black text-forest-green">
+              <PrivateNumber 
+                value={dailySales.reduce((sum, sale) => sum + sale.roomRent + sale.restaurantBills + sale.barSales, 0) - expenses.reduce((sum, exp) => sum + exp.amount, 0)}
+                format={formatCurrency}
+              />
+            </h3>
+          </div>
+          <div className="p-3 bg-forest-green/5 rounded-full">
+            <DollarSign className="text-brushed-gold" size={28} />
+          </div>
+        </div>
       </div>
 
       {/* Charts Grid */}
@@ -378,47 +424,6 @@ export default function DashboardOverview() {
             <p>No compliance deadlines configured</p>
           </div>
         )}
-      </div>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-6 border border-brushed-gold/20 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-forest-green/70">Total Revenue</span>
-            <TrendingUp className="text-brushed-gold" size={20} />
-          </div>
-          <div className="text-2xl font-bold text-forest-green">
-            <PrivateNumber 
-              value={dailySales.reduce((sum, sale) => sum + sale.roomRent + sale.restaurantBills + sale.barSales, 0)}
-              format={formatCurrency}
-            />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-6 border border-brushed-gold/20 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-forest-green/70">Total Expenses</span>
-            <TrendingDown className="text-brushed-gold" size={20} />
-          </div>
-          <div className="text-2xl font-bold text-forest-green">
-            <PrivateNumber 
-              value={expenses.reduce((sum, exp) => sum + exp.amount, 0)}
-              format={formatCurrency}
-            />
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-6 border border-brushed-gold/20 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-forest-green/70">Total Peg Sales</span>
-            <TrendingUp className="text-brushed-gold" size={20} />
-          </div>
-          <p className="text-2xl font-bold text-forest-green">
-            {formatNumber(
-              inventory.reduce((sum, item) => sum + item.sales, 0),
-              1
-            )}{' '}
-            pegs
-          </p>
-        </div>
       </div>
     </div>
     </Suspense>

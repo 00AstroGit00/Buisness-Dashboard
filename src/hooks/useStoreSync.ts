@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store/Store';
 import { useBusinessStore } from '../store/useBusinessStore';
 import { storeSyncManager, serializeStoreState, serializeBusinessStoreState, type SyncEventType } from '../utils/storeSync';
+import { indexedDBStorage } from '../utils/indexedDBStorage';
 
 // Type declaration for NodeJS timeout
 declare global {
@@ -60,7 +61,7 @@ export function useStoreSync() {
     }));
 
     // Debounced save
-    saveTimeoutRef.current = setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(async () => {
       try {
         // Serialize main store state
         const mainStateToSave = {
@@ -73,8 +74,8 @@ export function useStoreSync() {
 
         const serializedMain = serializeStoreState(mainStateToSave);
 
-        // Save main store to localStorage
-        localStorage.setItem('deepa-store', serializedMain);
+        // Save to IndexedDB (High Performance)
+        await indexedDBStorage.setItem('deepa-store', serializedMain);
 
         // Serialize business store state
         const businessStateToSave = {
@@ -88,8 +89,8 @@ export function useStoreSync() {
 
         const serializedBusiness = serializeBusinessStoreState(businessStateToSave);
 
-        // Save business store to localStorage
-        localStorage.setItem('deepa-business-store', serializedBusiness);
+        // Save to IndexedDB (High Performance)
+        await indexedDBStorage.setItem('deepa-business-store', serializedBusiness);
 
         // Update sync status
         const now = new Date();

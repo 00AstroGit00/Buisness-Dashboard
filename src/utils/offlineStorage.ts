@@ -62,6 +62,43 @@ export async function getOfflineItems(): Promise<OfflineSale[]> {
   });
 }
 
+/**
+ * Get offline items in chunks (Pagination)
+ * Optimized for 8GB RAM to prevent browser memory spikes.
+ */
+export async function getOfflineItemsChunked(offset: number = 0, limit: number = 50): Promise<OfflineSale[]> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const results: OfflineSale[] = [];
+    let skipped = 0;
+    let count = 0;
+
+    const cursorRequest = store.openCursor(null, 'prev'); // Most recent first
+
+    cursorRequest.onsuccess = (event) => {
+      const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+      if (cursor && count < limit) {
+        if (skipped < offset) {
+          skipped++;
+          cursor.continue();
+        } else {
+          results.push(cursor.value);
+          count++;
+          cursor.continue();
+        }
+      } else {
+        resolve(results);
+      }
+    };
+
+    cursorRequest.onerror = (event) => {
+      reject((event.target as IDBRequest).error);
+    };
+  });
+}
+
 // Clear offline items
 export async function clearOfflineItems(): Promise<void> {
   const db = await openDB();

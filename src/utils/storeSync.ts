@@ -10,7 +10,7 @@ import type { AppState } from '../store/Store';
 import type { ProductInventory } from '../utils/liquorLogic';
 import type { BusinessStoreState } from '../store/useBusinessStore';
 
-export type SyncEventType = 'inventory' | 'billing' | 'rooms' | 'accounting' | 'full-sync' | 'business-store' | 'sale-recorded' | 'room-updated';
+export type SyncEventType = 'inventory' | 'billing' | 'rooms' | 'accounting' | 'full-sync' | 'business-store' | 'sale-recorded' | 'room-updated' | 'STOCK_UPDATE';
 
 export interface SyncEvent {
   type: SyncEventType;

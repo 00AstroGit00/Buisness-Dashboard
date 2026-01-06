@@ -1,4 +1,6 @@
 /* Deepa Restaurant Dashboard - Core Styles */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
   --color-forest-green: #0a3d31;
   --color-forest-green-light: #0d5243;
@@ -9,6 +11,31 @@
   --bg-light: #f8fafc;
   --text-dark: #0a3d31;
   --border-light: #e2e8f0;
+  --font-serif: 'Playfair Display', serif;
+}
+
+h1, h2, h3, .font-serif {
+  font-family: var(--font-serif);
+}
+
+.bg-brushed-gold-gradient {
+  background: linear-gradient(135deg, #c5a059 0%, #d4b371 50%, #a6893f 100%);
+}
+
+.btn-primary-gold {
+  background: linear-gradient(135deg, #c5a059 0%, #d4b371 50%, #a6893f 100%);
+  color: #0a3d31;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+}
+
+.btn-primary-gold:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(197, 160, 89, 0.4);
+}
+
+.btn-primary-gold:active {
+  transform: translateY(0);
 }
 
 * {

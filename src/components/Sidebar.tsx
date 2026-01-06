@@ -1,52 +1,4 @@
-import { LayoutDashboard, Package, Calculator, Users, UserCircle, X, Shield, ShoppingCart, ArrowDownCircle, LogOut, FileCheck, FileBarChart, Activity, Cloud, CloudOff, Loader2, TrendingUp, ClipboardCheck, Upload, Wrench, Cpu } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import type { User } from '../context/AuthContext';
-
-// ... interfaces ...
-
-function MemoryUsageWidget() {
-  const [memory, setMemory] = useState<{ used: number; total: number } | null>(null);
-
-  useEffect(() => {
-    const updateMemory = () => {
-      if ('memory' in performance) {
-        const perfMemory = (performance as any).memory;
-        setMemory({
-          used: Math.round(perfMemory.usedJSHeapSize / (1024 * 1024)),
-          total: Math.round(perfMemory.jsHeapSizeLimit / (1024 * 1024)),
-        });
-      }
-    };
-
-    updateMemory();
-    const interval = setInterval(updateMemory, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (!memory) return null;
-
-  const usagePercent = (memory.used / memory.total) * 100;
-  const isHigh = usagePercent > 80;
-
-  return (
-    <div className="px-4 py-3 border-t border-brushed-gold/20">
-      <div className="flex items-center gap-2 mb-2">
-        <Cpu size={14} className={isHigh ? 'text-red-400' : 'text-brushed-gold'} />
-        <span className="text-[10px] font-black uppercase tracking-wider text-brushed-gold/70">System Health (RAM)</span>
-      </div>
-      <div className="w-full bg-forest-green-dark/50 rounded-full h-1.5 mb-1 overflow-hidden border border-brushed-gold/10">
-        <div 
-          className={`h-full transition-all duration-1000 ${isHigh ? 'bg-red-500' : 'bg-brushed-gold'}`} 
-          style={{ width: `${usagePercent}%` }} 
-        />
-      </div>
-      <div className="flex justify-between text-[9px] font-bold text-brushed-gold/50">
-        <span>{memory.used}MB USED</span>
-        <span>{memory.total}MB LIMIT</span>
-      </div>
-    </div>
-  );
-}
+import SystemHealth from './SystemHealth';
 
 export default function Sidebar({ currentPage, onPageChange, isOpen, onClose, user, onLogout, syncStatus }: SidebarProps) {
   // Define all nav items with access requirements
@@ -58,7 +10,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onClose, us
     { id: 'billing', label: 'Billing', icon: <ShoppingCart size={20} />, adminOnly: true },
     { id: 'endofday', label: 'End of Day', icon: <FileCheck size={20} /> },
     { id: 'excise', label: 'Excise Report', icon: <FileBarChart size={20} /> },
-    { id: 'system', label: 'System Health', icon: <Activity size={20} /> },
+    // System Health removed as it is now a widget
     { id: 'analytics', label: 'Profit Analytics', icon: <TrendingUp size={20} />, adminOnly: true },
     { id: 'audit', label: 'Digital Audit', icon: <ClipboardCheck size={20} />, adminOnly: true },
     { id: 'backup', label: 'Backup & Restore', icon: <Upload size={20} />, adminOnly: true },
@@ -66,6 +18,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onClose, us
     { id: 'employees', label: 'Employee Hub', icon: <UserCircle size={20} />, adminOnly: true },
     { id: 'staff', label: 'Staff', icon: <Users size={20} />, adminOnly: true },
     { id: 'maintenance', label: 'Maintenance', icon: <Wrench size={20} />, adminOnly: true },
+    { id: 'settings', label: 'Settings', icon: <Settings size={20} />, adminOnly: true },
   ];
 
   // Filter nav items based on user role
@@ -125,7 +78,7 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onClose, us
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-brushed-gold/20">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -149,52 +102,8 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onClose, us
           ))}
         </nav>
 
-        {/* System Health RAM Widget */}
-        <MemoryUsageWidget />
-
-        {/* Sync Status Indicator */}
-          <div className={`mb-4 p-3 rounded-lg border transition-all ${
-            syncStatus.isSynced && !syncStatus.isSaving
-              ? 'bg-gradient-to-r from-brushed-gold/30 to-brushed-gold/10 border-brushed-gold/70 shadow-[0_0_10px_rgba(197,160,89,0.3)]' // Gold when synced to NVMe SSD
-              : syncStatus.isSaving
-              ? 'bg-blue-500/20 border-blue-400/50'
-              : 'bg-yellow-500/20 border-yellow-400/50'
-          }`}>
-            <div className="flex items-center gap-2 mb-1">
-              {syncStatus.isSaving ? (
-                <Loader2 className="text-blue-400 animate-spin" size={16} />
-              ) : syncStatus.isSynced ? (
-                <Cloud className="text-brushed-gold animate-pulse" size={16} />
-              ) : (
-                <CloudOff className="text-yellow-400" size={16} />
-              )}
-              <p className={`text-xs font-medium ${
-                syncStatus.isSynced && !syncStatus.isSaving
-                  ? 'text-brushed-gold animate-pulse' // Gold text when synced to NVMe SSD
-                  : syncStatus.isSaving
-                  ? 'text-blue-400'
-                  : 'text-yellow-400'
-              }`}>
-                {syncStatus.isSaving
-                  ? 'Saving to NVMe SSD...'
-                  : syncStatus.isSynced
-                  ? 'Synced to NVMe SSD'
-                  : 'Not Synced to NVMe SSD'}
-              </p>
-            </div>
-            {syncStatus.lastSyncTime && (
-              <p className="text-xs text-brushed-gold/60 mt-1">
-                Last sync: {syncStatus.lastSyncTime.toLocaleTimeString('en-IN', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
-            )}
-            {syncStatus.error && (
-              <p className="text-xs text-red-400 mt-1">Error: {syncStatus.error}</p>
-            )}
-          </div>
-        </div>
+        {/* System Health Widget */}
+        <SystemHealth />
 
         {/* User Info & Logout */}
         <div className="p-4 border-t border-brushed-gold/20">

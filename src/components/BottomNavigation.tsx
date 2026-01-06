@@ -4,7 +4,7 @@
  * All primary controls within thumb-reach zone
  */
 
-import { LayoutDashboard, Package, Calculator, UserCircle, Folder, ReceiptText, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Package, Calculator, UserCircle, Folder, ReceiptText, TrendingUp, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import type React from 'react';
 
@@ -31,6 +31,7 @@ export default function BottomNavigation({ currentPage, onPageChange }: BottomNa
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp size={24} />, adminOnly: true },
     { id: 'compliance', label: 'Vault', icon: <Folder size={24} />, adminOnly: true },
     { id: 'billing', label: 'Bill', icon: <ReceiptText size={24} />, adminOnly: true },
+    { id: 'settings', label: 'Set', icon: <Settings size={24} />, adminOnly: true }
   ];
 
   // Filter based on access

@@ -1,68 +1,88 @@
 /**
  * Liquor Calculation Utilities
- * Handles precise peg factors and stock valuation for bar accounting.
+ * Handles precise peg factors, case-to-bottle conversions, and stock tracking.
  */
 
+export type BottleVolume = '1000ml' | '750ml' | '500ml' | '375ml';
+
 /**
- * Returns the number of standard 60ml pegs contained in a bottle of a given volume.
+ * Returns the number of standard 60ml pegs contained in a single bottle.
  * 
- * @param volume - The bottle volume string (e.g., '1000ml', '750ml')
- * @returns The peg conversion factor (units of 60ml)
+ * Rules:
+ * - 1000ml = 16.66 pegs
+ * - 750ml = 12.5 pegs
+ * - 500ml = 8.33 pegs
+ * - 375ml = 6.25 pegs
  */
 export function getPegFactor(volume: string): number {
-  const cleanVolume = volume.toLowerCase().replace(/\s/g, '');
+  const cleanVol = volume.toLowerCase().replace(/\s/g, '');
   
-  switch (cleanVolume) {
-    case '1000ml':
-    case '1000':
-      return 16.66;
-    case '750ml':
-    case '750':
-      return 12.5;
-    case '500ml':
-    case '500':
-      return 8.33;
-    case '375ml':
-    case '375':
-      return 6.25;
-    default:
-      // Fallback: dynamic calculation if size is unknown
-      const ml = parseInt(cleanVolume);
-      return !isNaN(ml) ? Number((ml / 60).toFixed(2)) : 0;
+  switch (cleanVol) {
+    case '1000ml': return 16.66;
+    case '750ml':  return 12.5;
+    case '500ml':  return 8.33;
+    case '375ml':  return 6.25;
+    default: return 0;
   }
 }
 
 /**
- * Calculates the total value of remaining stock.
+ * Returns the number of bottles per case for a given volume.
  * 
- * Documentation of Formula (LaTeX):
- * $$Closing\ Stock\ Value = (Full\ Bottles \times Unit\ Price) + (Remaining\ ML \times ML\ Price)$$
- * 
- * @param closingStock - Total stock remaining (in bottle units, e.g., 5.5 for 5 bottles and a half)
- * @param purchasePrice - The purchase cost of a full case (from PRODUCT PRICE sheet)
- * @param caseConfig - The number of bottles per case (e.g., 12 for 750ml)
- * @param bottleSizeMl - The volume of a single bottle in ML (defaults to 750)
- * @returns Total calculated value in currency units
+ * Rules:
+ * - 1000ml = 9/case
+ * - 750ml = 12/case
+ * - 500ml = 18/case
+ * - 375ml = 24/case
  */
-export function calculateStockValue(
-  closingStock: number, 
-  purchasePrice: number, 
-  caseConfig: number,
-  bottleSizeMl: number = 750
-): number {
-  if (caseConfig <= 0) return 0;
-
-  // Unit Price = Purchase Price / Bottles per case
-  const unitPrice = purchasePrice / caseConfig;
+export function getBottlesPerCase(volume: string): number {
+  const cleanVol = volume.toLowerCase().replace(/\s/g, '');
   
-  // ML Price = Unit Price / ML per bottle
-  const mlPrice = unitPrice / bottleSizeMl;
+  switch (cleanVol) {
+    case '1000ml': return 9;
+    case '750ml':  return 12;
+    case '500ml':  return 18;
+    case '375ml':  return 24;
+    default: return 12; // Standard fallback
+  }
+}
 
-  const fullBottles = Math.floor(closingStock);
-  const partialBottleStock = closingStock - fullBottles;
-  const remainingMl = partialBottleStock * bottleSizeMl;
+interface ClosingStockResult {
+  fullBottles: number;
+  loosePegs: number;
+  totalPegs: number;
+}
 
-  const value = (fullBottles * unitPrice) + (remainingMl * mlPrice);
+/**
+ * Calculates remaining inventory based on opening stock and sales.
+ * 
+ * @param openingBottles - Total full bottles at start of shift
+ * @param purchasesBottles - Any new bottles added during shift
+ * @param salesPegs - Total 60ml pegs recorded as sold
+ * @param volume - Bottle size string
+ */
+export function calculateClosingStock(
+  openingBottles: number,
+  purchasesBottles: number,
+  salesPegs: number,
+  volume: string
+): ClosingStockResult {
+  const pegFactor = getPegFactor(volume);
+  if (pegFactor === 0) return { fullBottles: 0, loosePegs: 0, totalPegs: 0 };
+
+  // 1. Calculate total pegs available
+  const totalAvailablePegs = (openingBottles + purchasesBottles) * pegFactor;
   
-  return Number(value.toFixed(2));
+  // 2. Subtract sales
+  const remainingTotalPegs = Math.max(0, totalAvailablePegs - salesPegs);
+  
+  // 3. Convert back to Bottles and Loose Pegs
+  const fullBottles = Math.floor(remainingTotalPegs / pegFactor);
+  const loosePegs = Number((remainingTotalPegs % pegFactor).toFixed(2));
+
+  return {
+    fullBottles,
+    loosePegs,
+    totalPegs: Number(remainingTotalPegs.toFixed(2))
+  };
 }

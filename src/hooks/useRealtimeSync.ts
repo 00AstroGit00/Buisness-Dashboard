@@ -64,8 +64,8 @@ export function useRealtimeSync() {
   useEffect(() => {
     if (!storeSyncManager.isAvailable()) return;
 
-    const unsubscribeSale = storeSyncManager.subscribe('sale-recorded', (event) => {
-      console.log('🔔 Real-time Sale Event:', event.data);
+    const unsubscribeStock = storeSyncManager.subscribe('STOCK_UPDATE', (event) => {
+      console.log('🔔 Real-time Stock Update:', event.data);
       // Here we could trigger a toast or UI update
       // The store sync handles the data, this is for notifications/real-time feel
     });
@@ -75,7 +75,7 @@ export function useRealtimeSync() {
     });
 
     return () => {
-      unsubscribeSale();
+      unsubscribeStock();
       unsubscribeRoom();
     };
   }, []);
@@ -84,7 +84,7 @@ export function useRealtimeSync() {
   const recordRealtimeSale = async (data: any) => {
     // If online, broadcast immediately
     if (navigator.onLine) {
-      storeSyncManager.broadcast('sale-recorded', data);
+      storeSyncManager.broadcast('STOCK_UPDATE', data);
     } else {
       // If offline, save to IndexedDB
       await saveOfflineItem({

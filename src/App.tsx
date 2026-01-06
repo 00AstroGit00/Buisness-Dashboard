@@ -1,8 +1,8 @@
-import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { PrivacyModeProvider } from '@/context/PrivacyModeContext';
-import Dashboard from '@/components/Dashboard';
-import Login from '@/components/Login_Enhanced'; // Uses the enhanced login with fingerprint & PIN
-import LoadingSpinner from '@/components/LoadingSpinner';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { PrivacyModeProvider } from './context/PrivacyModeContext';
+import Dashboard from './components/Dashboard';
+import Login from './components/Login_Enhanced'; // Uses the enhanced login with fingerprint & PIN
+import LoadingSpinner from './components/LoadingSpinner';
 
 function AppContent() {
   const { isAuthenticated, isInitialized } = useAuth();

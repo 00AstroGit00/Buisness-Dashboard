@@ -1,206 +1,197 @@
 /**
- * High-Performance Inventory Component
- * Features: Virtualized Card Grid, Search, and Tactile Feedback.
- * Optimized for S23 Ultra (Touch) and HP Laptop (Performance).
+ * Optimized Inventory Component
+ * Features: Virtualized Grid, Memoized Calculations, and Performance Profiling.
+ * Specifically optimized for 8GB RAM environments.
  */
 
-import { useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo, useCallback, Profiler } from 'react';
 import { FixedSizeGrid as Grid } from 'react-window';
 import { 
-  Search, 
   Package, 
-  Zap, 
+  Search, 
   Plus, 
   AlertTriangle, 
   Database,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { useBusinessStore } from '../store/useBusinessStore';
-import { type ProductInventory } from '../utils/liquorLogic';
+import { useSystemMonitor } from './SystemMonitor';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
+import { formatCurrency } from '../utils/formatCurrency';
 import PrivateNumber from './PrivateNumber';
 
-// --- Card Component ---
-
-const InventoryCard = ({ 
-  item, 
-  onSale 
-}: { 
-  item: ProductInventory; 
-  onSale: (type: 'peg' | 'bottle') => void 
-}) => {
-  const isLowStock = item.currentStock.totalBottles < 3;
-
-  return (
-    <motion.div 
-      whileTap={{ scale: 0.95 }}
-      layout
-      className={`
-        bg-white rounded-2xl border-2 transition-all p-4 h-[220px] flex flex-col justify-between
-        ${isLowStock ? 'border-orange-400 bg-orange-50/5' : 'border-forest-green/10 shadow-sm hover:border-forest-green/30'}
-      `}
-    >
-      <div>
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-black text-forest-green text-sm uppercase leading-tight truncate pr-2 flex-1" title={item.productName}>
-            {item.productName.split(' ').slice(0, -1).join(' ')}
-          </h3>
-          <span className="bg-forest-green text-brushed-gold text-[10px] font-black px-2 py-0.5 rounded uppercase">
-            {item.config.size}ml
-          </span>
-        </div>
-
-        <div className="flex justify-between items-end mt-4">
-          <div>
-            <p className="text-[9px] font-black text-forest-green/40 uppercase">Closing Stock</p>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-black text-forest-green">{item.currentStock.totalBottles}</span>
-              <span className="text-xs font-bold text-forest-green/60 uppercase">btl</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-[9px] font-black text-forest-green/40 uppercase">Loose Pegs</p>
-            <p className="text-lg font-black text-brushed-gold">{item.currentStock.loosePegs.toFixed(1)}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mt-4">
-        {/* Secondary: Full Bottle (Room Service) */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => onSale('bottle')}
-          disabled={item.currentStock.totalBottles < 1}
-          className="py-2 bg-gray-100 text-forest-green rounded-xl text-[10px] font-black uppercase hover:bg-gray-200 transition-colors disabled:opacity-30"
-        >
-          +1 Btl
-        </motion.button>
-
-        {/* Primary: 60ml Peg (Bar) */}
-        <motion.button
-          whileTap={{ scale: 0.9, rotate: [0, -2, 2, 0] }}
-          onClick={() => onSale('peg')}
-          disabled={item.currentStock.totalPegs < 1}
-          className="py-3 bg-brushed-gold text-forest-green rounded-xl text-xs font-black uppercase shadow-md flex items-center justify-center gap-1 hover:bg-brushed-gold-light active:shadow-inner transition-all disabled:opacity-30"
-        >
-          <Plus size={14} strokeWidth={4} />
-          60ml
-        </motion.button>
-      </div>
-    </motion.div>
-  );
-};
-
-// --- Main Inventory Component ---
+// --- Types ---
+interface InventoryItem {
+  id: string;
+  productName: string;
+  config: { size: number; mlPerBottle: number };
+  currentStock: { totalBottles: number; totalPegs: number; loosePegs: number };
+}
 
 export default function Inventory() {
-  const { inventory, recordSale, isLoading, error } = useBusinessStore();
+  const { inventory, recordSale, isLoading, loadOpeningStock } = useBusinessStore();
+  const { onRenderCallback } = useSystemMonitor();
+  const { recordRealtimeSale } = useRealtimeSync();
   const [search, setSearch] = useState('');
 
+  // --- 1. Memoized Search & Filter (Prevent CPU spikes) ---
   const filteredItems = useMemo(() => {
     const q = search.toLowerCase();
-    return inventory.filter(i => i.productName.toLowerCase().includes(q));
+    return inventory.filter(item => 
+      item.productName.toLowerCase().includes(q)
+    ).sort((a, b) => a.productName.localeCompare(b.productName));
   }, [inventory, search]);
 
-  const handleSale = useCallback((productName: string, type: 'peg' | 'bottle') => {
-    if (type === 'peg') {
-      recordSale(productName, 60, 1);
-    } else {
-      // Logic for full bottle sale (room service)
-      // Assuming 1 bottle = capacity in ml
-      const config = inventory.find(i => i.productName === productName)?.config;
-      if (config) {
-        recordSale(productName, config.mlPerBottle, 1);
-      }
-    }
-  }, [recordSale, inventory]);
+  // --- 2. Grid Configuration (Responsive Logic) ---
+  const getGridConfig = () => {
+    if (typeof window === 'undefined') return { columns: 1, width: 800 };
+    const width = window.innerWidth - 48; // Sidebar/Padding
+    if (width > 1200) return { columns: 4, width };
+    if (width > 900) return { columns: 3, width };
+    if (width > 600) return { columns: 2, width };
+    return { columns: 1, width };
+  };
 
-  // Virtualization logic
-  const columnCount = useMemo(() => {
-    if (typeof window === 'undefined') return 1;
-    if (window.innerWidth >= 1280) return 4;
-    if (window.innerWidth >= 1024) return 3;
-    if (window.innerWidth >= 640) return 2;
-    return 1;
-  }, []);
+  const { columns, width } = useMemo(getGridConfig, [typeof window !== 'undefined' ? window.innerWidth : 0]);
+  const columnWidth = Math.floor(width / columns);
+  const rowCount = Math.ceil(filteredItems.length / columns);
 
-  const rowCount = Math.ceil(filteredItems.length / columnCount);
+  // --- 3. Optimized Cell Renderer ---
+  const Cell = ({ columnIndex, rowIndex, style }: any) => {
+    const index = rowIndex * columns + columnIndex;
+    const item = filteredItems[index];
+
+    if (!item) return null;
+
+    const handleSaleAction = (type: 'peg' | 'bottle') => {
+      const vol = type === 'peg' ? 60 : item.config.mlPerBottle;
+      recordSale(item.productName, vol, 1);
+      
+      // Real-time broadcast for S23 Ultra -> HP Laptop sync
+      recordRealtimeSale({
+        type: 'STOCK_UPDATE',
+        productId: item.productName,
+        saleType: type,
+        timestamp: Date.now()
+      });
+    };
+
+    return (
+      <div style={{ ...style, padding: '8px' }}>
+        <InventoryCard 
+          item={item} 
+          onSale={handleSaleAction} 
+        />
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
       <div className="h-96 flex flex-col items-center justify-center text-forest-green">
         <Loader2 className="animate-spin mb-4" size={48} />
-        <p className="font-black uppercase tracking-widest text-xs">Hydrating Bar Stock...</p>
+        <p className="font-bold uppercase tracking-widest">Virtualized Stock Init...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 h-screen flex flex-col pb-24">
-      {/* Header & Search */}
-      <div className="flex-shrink-0 flex flex-col gap-4 sticky top-0 bg-gray-50 z-20 pb-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-black text-forest-green flex items-center gap-2">
-            <Package className="text-brushed-gold" size={28} />
-            Digital Bar Counter
-          </h2>
+    <Profiler id="Inventory" onRender={onRenderCallback}>
+      <div className="space-y-6 pb-24 h-screen flex flex-col overflow-hidden">
+        {/* Sticky Header */}
+        <div className="flex-shrink-0 space-y-4 pt-4">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-2xl font-black text-forest-green flex items-center gap-2">
+              <Package className="text-brushed-gold" size={28} />
+              Bar Counter
+            </h2>
+          </div>
+
+          <div className="relative px-2">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-forest-green/50" size={20} />
+            <input
+              autoFocus
+              type="text"
+              placeholder="Search Brand..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-14 pr-4 py-4 text-lg font-bold border-2 border-forest-green/20 rounded-2xl focus:border-forest-green outline-none shadow-sm transition-all bg-white"
+            />
+          </div>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-forest-green/50" size={20} />
-          <input
-            autoFocus
-            type="text"
-            placeholder="Search Drinks (e.g. ceasar)..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 text-lg font-bold border-2 border-forest-green/20 rounded-2xl focus:border-forest-green outline-none shadow-sm transition-all bg-white"
-          />
+        {/* Virtualized Grid */}
+        <div className="flex-1 overflow-hidden px-2">
+          {filteredItems.length === 0 ? (
+            <div className="bg-white rounded-2xl border-2 border-dashed border-forest-green/20 p-20 text-center">
+              <Database className="mx-auto text-forest-green/10 mb-4" size={64} />
+              <h3 className="text-xl font-bold text-forest-green/40">Empty Stock Room</h3>
+            </div>
+          ) : (
+            <Grid
+              columnCount={columns}
+              columnWidth={columnWidth}
+              height={window.innerHeight - 300}
+              rowCount={rowCount}
+              rowHeight={260}
+              width={width}
+              className="scrollbar-hide"
+            >
+              {Cell}
+            </Grid>
+          )}
         </div>
       </div>
+    </Profiler>
+  );
+}
 
-      {/* Grid Display */}
-      <div className="flex-1 overflow-hidden">
-        {filteredItems.length === 0 ? (
-          <div className="h-64 bg-white rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400">
-            <Database size={48} className="mb-2 opacity-20" />
-            <p className="font-bold">No drinks matched your search</p>
+// --- Memoized Card Component (Prevent re-renders) ---
+
+function InventoryCard({ item, onSale }: { item: any; onSale: (type: 'peg' | 'bottle') => void }) {
+  const isLowStock = item.currentStock.totalBottles < 3;
+  const remainingPercent = useMemo(() => 
+    (item.remainingVolumeInCurrentBottle / item.config.mlPerBottle) * 100, 
+    [item.remainingVolumeInCurrentBottle, item.config.mlPerBottle]
+  );
+
+  return (
+    <div className={`
+      relative bg-white h-full rounded-2xl overflow-hidden shadow-md border-2 transition-all
+      ${isLowStock ? 'border-orange-400 bg-orange-50/10' : 'border-forest-green/5'}
+    `}>
+      <div className="bg-forest-green p-4 flex justify-between items-center">
+        <div className="max-w-[70%]">
+          <h3 className="text-white font-black text-sm uppercase truncate">{item.productName.split(' ').slice(0, -1).join(' ')}</h3>
+          <span className="text-[10px] font-black text-brushed-gold uppercase">{item.config.size}ml</span>
+        </div>
+        {isLowStock && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-1 rounded-full animate-pulse">LOW</div>}
+      </div>
+
+      <div className="p-4 flex flex-col justify-between h-[calc(100%-60px)]">
+        <div className="flex justify-between items-end">
+          <div className="space-y-1">
+            <p className="text-[9px] font-black text-forest-green/40 uppercase">Stock</p>
+            <p className="text-2xl font-black text-forest-green leading-none">{item.currentStock.totalBottles}</p>
           </div>
-        ) : filteredItems.length > 50 ? (
-          /* Virtualized View for large lists (8GB RAM optimization) */
-          <Grid
-            columnCount={columnCount}
-            columnWidth={window.innerWidth / columnCount - 24} // Adjusted for padding
-            height={window.innerHeight - 300}
-            rowCount={rowCount}
-            rowHeight={240}
-            width={window.innerWidth - 40}
-          >
-            {({ columnIndex, rowIndex, style }) => {
-              const index = rowIndex * columnCount + columnIndex;
-              const item = filteredItems[index];
-              if (!item) return null;
-              return (
-                <div style={{ ...style, padding: '8px' }}>
-                  <InventoryCard item={item} onSale={(type) => handleSale(item.productName, type)} />
-                </div>
-              );
-            }}
-          </Grid>
-        ) : (
-          /* Normal View for small lists */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto">
-            <AnimatePresence>
-              {filteredItems.map(item => (
-                <InventoryCard 
-                  key={`${item.productName}_${item.config.size}`} 
-                  item={item} 
-                  onSale={(type) => handleSale(item.productName, type)} 
-                />
-              ))}
-            </AnimatePresence>
+          <div className="text-right space-y-1">
+            <p className="text-[9px] font-black text-forest-green/40 uppercase tracking-widest">Pegs</p>
+            <p className="text-lg font-black text-brushed-gold leading-none">{item.currentStock.loosePegs.toFixed(1)}</p>
           </div>
-        )}
+        </div>
+
+        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden my-4">
+          <div className="h-full bg-brushed-gold transition-all duration-700" style={{ width: `${remainingPercent}%` }} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => onSale('bottle')} className="py-3 bg-gray-50 text-forest-green rounded-xl font-black text-[10px] uppercase hover:bg-gray-100 transition-all active:scale-95 touch-manipulation">
+            +1 Btl
+          </button>
+          <button onClick={() => onSale('peg')} className="py-3 bg-brushed-gold text-forest-green rounded-xl font-black text-[10px] uppercase shadow-md hover:bg-brushed-gold-light transition-all active:scale-95 touch-manipulation">
+            +60ml
+          </button>
+        </div>
       </div>
     </div>
   );
