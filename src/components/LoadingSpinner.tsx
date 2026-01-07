@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 /**
  * LoadingSpinner Component
@@ -7,63 +8,60 @@ import React from 'react';
  */
 export default function LoadingSpinner(): React.JSX.Element {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center p-4">
-      <div className="flex flex-col items-center">
-        <div className="relative">
-          {/* Outer ring */}
-          <svg
-            width="64"
-            height="64"
-            viewBox="0 0 64 64"
-            className="animate-spin"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <circle
-              cx="32"
-              cy="32"
-              r="28"
-              stroke="var(--color-forest-green)"
-              strokeWidth="4"
-              fill="none"
-              strokeOpacity="0.2"
-            />
-            <path
-              d="M60 32a28 28 0 0 0-5.2-15.8"
-              stroke="var(--color-brushed-gold)"
-              strokeWidth="4"
-              strokeLinecap="round"
-              fill="none"
-            />
-          </svg>
+    <div className="min-h-screen bg-[#050a09] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Dynamic Background */}
+      <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-brushed-gold/5 rounded-full blur-[150px]"></div>
+      <div className="absolute bottom-[-10%] left-[-20%] w-[60%] h-[60%] bg-forest-green/10 rounded-full blur-[120px]"></div>
 
-          {/* Inner circle with logo/icon */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 bg-gradient-to-br from-forest-green to-forest-green-light rounded-full flex items-center justify-center">
-              <div className="w-3 h-3 bg-brushed-gold rounded-full"></div>
-            </div>
+      <div className="flex flex-col items-center relative z-10">
+        <div className="relative mb-12">
+          {/* Custom Peg Measure Animation */}
+          <div className="w-24 h-32 relative">
+             {/* Top of Peg */}
+             <motion.div 
+               animate={{ rotate: 360 }}
+               transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+               className="absolute top-0 inset-x-0 h-12 border-2 border-brushed-gold/40 rounded-full flex items-center justify-center"
+             >
+                <div className="w-16 h-1 bg-gradient-to-r from-transparent via-brushed-gold to-transparent opacity-40"></div>
+             </motion.div>
+             
+             {/* Body of Peg */}
+             <div className="absolute top-6 left-1/2 -translate-x-1/2 w-16 h-20 bg-gradient-to-b from-brushed-gold/20 via-white/5 to-transparent border-x border-white/10 rounded-b-2xl">
+                {/* Liquid Level */}
+                <motion.div 
+                  initial={{ height: '0%' }}
+                  animate={{ height: '80%' }}
+                  transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
+                  className="absolute bottom-0 inset-x-0 bg-brushed-gold/30 rounded-b-2xl blur-sm"
+                />
+             </div>
+
+             {/* Base/Golden Core */}
+             <motion.div 
+               animate={{ scale: [1, 1.2, 1] }}
+               transition={{ duration: 2, repeat: Infinity }}
+               className="absolute bottom-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-brushed-gold rounded-full shadow-[0_0_20px_rgba(197,160,89,1)]"
+             />
           </div>
         </div>
 
-        <div className="mt-6 text-center">
-          <h2 className="text-xl font-bold text-forest-green mb-2">Deepa Restaurant & Tourist Home</h2>
-          <p className="text-forest-green/70 text-sm font-medium">Initializing dashboard…</p>
-          <div className="mt-4 w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-            <div className="animate-progress h-full bg-gradient-to-r from-brushed-gold to-brushed-gold-light rounded-full w-1/3"></div>
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl font-black text-white tracking-tighter uppercase">
+            Deepa <span className="gold-gradient-text">Hotel</span>
+          </h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 animate-pulse">Initializing Executive Node</p>
+          
+          <div className="w-48 h-1 bg-white/5 rounded-full mx-auto overflow-hidden relative">
+             <motion.div 
+               initial={{ x: '-100%' }}
+               animate={{ x: '100%' }}
+               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+               className="absolute inset-0 bg-gradient-to-r from-transparent via-brushed-gold to-transparent"
+             />
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes progress {
-          0% { width: 0%; }
-          50% { width: 70%; }
-          100% { width: 100%; }
-        }
-        .animate-progress {
-          animation: progress 1.5s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   );
 }

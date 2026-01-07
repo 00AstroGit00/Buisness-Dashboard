@@ -1,19 +1,22 @@
 import { useState, useMemo, Suspense, lazy } from 'react';
-import { Menu, Loader2, Building, User, Shield, Eye, EyeOff } from 'lucide-react';
+import { Building2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { useStoreSync } from '../hooks/useStoreSync';
+import AppShell from './layout/AppShell';
 
-// ✅ Lazy Load ALL Components to save RAM on your 8GB HP Laptop
-// Only the visible page is loaded into memory at any given time
+// ✅ Lazy Load ALL Components for RAM Efficiency
 const DashboardOverview = lazy(() => import('./DashboardOverview'));
-const RoomManagement = lazy(() => import('./RoomManagement'));
+const VisualFloorPlan = lazy(() => import('./VisualFloorPlan'));
 const Inventory = lazy(() => import('./Inventory'));
+const QuickPour = lazy(() => import('./QuickPour'));
+const LiquorLedger = lazy(() => import('./LiquorLedger'));
 const Accounting = lazy(() => import('./Accounting'));
 const EmployeeHub = lazy(() => import('./EmployeeHub'));
 const ComplianceVault = lazy(() => import('./ComplianceVault'));
 const BillingSystem = lazy(() => import('./BillingSystem'));
 const PurchaseInward = lazy(() => import('./PurchaseInward'));
-const ProfitAnalytics = lazy(() => import('./ProfitAnalytics'));
+const AnalyticsOverview = lazy(() => import('./AnalyticsOverview'));
+const DeepaBrain = lazy(() => import('./DeepaBrain'));
 const DigitalAudit = lazy(() => import('./DigitalAudit'));
 const SystemMonitor = lazy(() => import('./SystemMonitor'));
 const BackupRestore = lazy(() => import('./BackupRestore'));
@@ -24,25 +27,16 @@ const EndOfDay = lazy(() => import('./EndOfDay'));
 const ExciseReport = lazy(() => import('./ExciseReport'));
 const Settings = lazy(() => import('./Settings'));
 
-// ✅ Lazy Load Less-Critical Shared Components
+// ✅ Shared Components
 const EmergencyLock = lazy(() => import('./EmergencyLock'));
 const OfflineIndicator = lazy(() => import('./OfflineIndicator'));
 
-// Keep critical UI components eagerly loaded for instant display
-import Sidebar from './Sidebar';
-import BottomNavigation from './BottomNavigation';
-import PrivacyModeToggle from './PrivacyModeToggle';
-
-type Page = 'dashboard' | 'rooms' | 'inventory' | 'accounting' | 'employees' | 'compliance' | 'billing' | 'purchases' | 'analytics' | 'audit' | 'backup' | 'security-log' | 'maintenance' | 'endofday' | 'excise' | 'system' | 'settings';
+type Page = 'dashboard' | 'rooms' | 'inventory' | 'quickpour' | 'ledger' | 'accounting' | 'employees' | 'compliance' | 'billing' | 'purchases' | 'analytics' | 'brain' | 'audit' | 'backup' | 'security-log' | 'maintenance' | 'endofday' | 'excise' | 'system' | 'settings';
 
 export default function Dashboard() {
-  const { user, logout, hasAccess } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, hasAccess } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
 
-  const syncStatus = useStoreSync();
-
-  // FIX: Access control without infinite loops
   const activePage = useMemo(() => {
     if (hasAccess(currentPage)) return currentPage;
     const fallbacks: Page[] = ['dashboard', 'inventory', 'rooms', 'billing'];
@@ -52,14 +46,17 @@ export default function Dashboard() {
   const renderPage = () => {
     switch (activePage) {
       case 'dashboard': return <DashboardOverview />;
-      case 'rooms': return <RoomManagement />;
+      case 'rooms': return <VisualFloorPlan />;
       case 'inventory': return <Inventory />;
+      case 'quickpour': return <QuickPour />;
+      case 'ledger': return <LiquorLedger />;
       case 'accounting': return <Accounting />;
       case 'employees': return <EmployeeHub />;
       case 'compliance': return <ComplianceVault />;
       case 'billing': return <BillingSystem />;
       case 'purchases': return <PurchaseInward />;
-      case 'analytics': return <ProfitAnalytics />;
+      case 'analytics': return <AnalyticsOverview />;
+      case 'brain': return <DeepaBrain />;
       case 'audit': return <DigitalAudit />;
       case 'backup': return <BackupRestore />;
       case 'security-log': return <SecurityLog />;
@@ -72,75 +69,36 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col lg:flex-row overflow-hidden font-sans">
-      {/* ✅ Lazy load system monitoring components to save RAM */}
+    <AppShell currentPage={activePage} onPageChange={(p) => setCurrentPage(p as Page)}>
+      {/* System HUDs */}
       <Suspense fallback={null}>
         <SystemMonitor />
-      </Suspense>
-      <Suspense fallback={null}>
         <PerformanceHUD />
-      </Suspense>
-      <Suspense fallback={null}>
         <OfflineIndicator />
+        {user?.role === 'ADMIN' && <EmergencyLock />}
       </Suspense>
-      {user?.role === 'admin' && (
-        <Suspense fallback={null}>
-          <EmergencyLock />
-        </Suspense>
-      )}
 
-      {/* Sidebar for Desktop / Overlay for Mobile */}
-      <Sidebar
-        currentPage={activePage}
-        onPageChange={(p) => { setCurrentPage(p as Page); setSidebarOpen(false); }}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        user={user}
-        onLogout={logout}
-        syncStatus={syncStatus}
-      />
-
-      <main className="flex-1 overflow-y-auto h-screen pb-20 lg:pb-0 bg-gradient-to-b from-white to-gray-50">
-          {/* Mobile Header Optimized for S23 Ultra */}
-          <header className="lg:hidden bg-gradient-to-r from-forest-green to-forest-green-light p-4 flex justify-between items-center sticky top-0 z-50 shadow-lg">
-             <div className="flex items-center gap-3">
-               <div className="p-2 bg-white/20 rounded-xl">
-                 <Building className="text-brushed-gold" size={24} />
-               </div>
-               <div>
-                 <h1 className="text-brushed-gold font-bold text-lg">Deepa Hotel</h1>
-                 <span className="text-brushed-gold/70 text-[10px] uppercase tracking-widest">Cherpulassery</span>
-               </div>
-             </div>
-             <div className="flex items-center gap-3">
-               <PrivacyModeToggle />
-               <button
-                 onClick={() => setSidebarOpen(true)}
-                 className="text-brushed-gold p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
-                 title="Open Menu"
-                 aria-label="Open navigation menu"
-               >
-                 <Menu size={24} />
-               </button>
-             </div>
-          </header>
-
-        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
-          <Suspense fallback={
-            <div className="flex flex-col items-center justify-center h-64 text-forest-green">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brushed-gold mb-4"></div>
-              <p className="text-sm font-medium text-forest-green/70">Loading {activePage}...</p>
-            </div>
-          }>
-            {renderPage()}
-          </Suspense>
+      <Suspense fallback={
+        <div className="flex flex-col items-center justify-center h-[60vh] text-white">
+           <div className="relative mb-8">
+              <div className="w-20 h-20 rounded-full border-4 border-white/5 border-t-brushed-gold animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Building2 size={28} className="text-brushed-gold opacity-30" />
+              </div>
+           </div>
+           <p className="text-xs font-black uppercase tracking-[0.4em] text-white/30 animate-pulse">Initializing Environment</p>
         </div>
-      </main>
-
-      {/* Bottom Nav for Mobile */}
-      <div className="lg:hidden">
-        <BottomNavigation currentPage={activePage} onPageChange={(p) => setCurrentPage(p as Page)} />
-      </div>
-    </div>
+      }>
+        <motion.div 
+          key={activePage}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="gpu-accelerated"
+        >
+          {renderPage()}
+        </motion.div>
+      </Suspense>
+    </AppShell>
   );
 }

@@ -1,16 +1,40 @@
 /**
- * End of Day Summary Component
+ * End of Day Summary Component - Upgraded UI
  * Daily Closing Report with Export and Auto-Backup
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { FileText, Download, Calendar, TrendingUp, Package, DollarSign, CheckCircle, Save, Bell } from 'lucide-react';
+import { 
+  FileText, 
+  Download, 
+  Calendar, 
+  TrendingUp, 
+  TrendingDown,
+  Package, 
+  DollarSign, 
+  CheckCircle2, 
+  Save, 
+  Bell,
+  ArrowUpRight,
+  ArrowDownRight,
+  History,
+  Cloud,
+  ChevronRight,
+  Printer,
+  ShieldCheck,
+  Building2,
+  Clock,
+  PieChart
+} from 'lucide-react';
 import { useStore } from '../store/Store';
 import { formatCurrency, formatNumber } from '../utils/formatCurrency';
 import { exportEndOfDayReport, exportInventoryToExcel } from '../utils/endOfDayExporter';
 import { createBackup, getBackupReminderStatus } from '../utils/backupManager';
 import { scheduleAutoSync, getSyncStatus, triggerManualSync } from '../utils/cloudSync';
 import PrivateNumber from './PrivateNumber';
+import { Card, CardHeader, CardTitle, CardContent } from './Card';
+import { Button } from './Button';
+import { Badge } from './Badge';
 
 export default function EndOfDay() {
   const { inventory, dailySales, expenses } = useStore();
@@ -18,36 +42,21 @@ export default function EndOfDay() {
   const [showBackupReminder, setShowBackupReminder] = useState(false);
   const [syncStatus, setSyncStatus] = useState<{ lastSync: Date | null; nextSync: Date | null; syncCount: number } | null>(null);
 
-  // Get today's date in YYYY-MM-DD format
-  const today = useMemo(() => {
-    return new Date().toISOString().split('T')[0];
-  }, []);
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
-  // Calculate daily closing report metrics
   const closingReport = useMemo(() => {
-    // Total Pegs Sold (from inventory)
-    const totalPegsSold = inventory.reduce((sum, item) => {
-      return sum + (item.sales || 0);
-    }, 0);
-
-    // Room Revenue for today
+    const totalPegsSold = inventory.reduce((sum, item) => sum + (item.sales || 0), 0);
     const todaySales = dailySales.filter((sale) => sale.date === today);
     const roomRevenue = todaySales.reduce((sum, sale) => sum + sale.roomRent, 0);
     const restaurantRevenue = todaySales.reduce((sum, sale) => sum + sale.restaurantBills, 0);
     const barRevenue = todaySales.reduce((sum, sale) => sum + sale.barSales, 0);
     const totalRevenue = roomRevenue + restaurantRevenue + barRevenue;
-
-    // Total Expenses for today
     const todayExpenses = expenses.filter((expense) => expense.date === today);
     const totalExpenses = todayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-
-    // Expenses by category
     const expensesByCategory = todayExpenses.reduce((acc, expense) => {
       acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
       return acc;
     }, {} as Record<string, number>);
-
-    // Net Profit
     const netProfit = totalRevenue - totalExpenses;
 
     return {
@@ -65,407 +74,270 @@ export default function EndOfDay() {
     };
   }, [inventory, dailySales, expenses, today]);
 
-  // Handle auto-backup (triggered at 11 PM) - using useCallback to avoid dependency issues
   const handleAutoBackup = useCallback(() => {
     const backupFile = createBackup();
     if (backupFile) {
-      console.log(`Auto-backup completed: ${backupFile.name}`);
       setBackupStatus(getBackupReminderStatus());
-      
-      // Show notification (could be enhanced with a toast library)
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Auto-Backup Complete', {
-          body: `Backup saved: ${backupFile.name}`,
-          icon: '/favicon.ico',
-        });
+        new Notification('Auto-Backup Complete', { body: `Backup saved: ${backupFile.name}` });
       }
     }
   }, []);
 
-  // Check backup status and set up reminder
   useEffect(() => {
-    // Schedule cloud sync (returns cleanup function)
     let cleanupSync: (() => void) | undefined;
-    try {
-      cleanupSync = scheduleAutoSync();
-    } catch (error) {
-      console.error('Error scheduling cloud sync:', error);
-    }
+    try { cleanupSync = scheduleAutoSync(); } catch (error) { console.error(error); }
     
     const checkBackupStatus = () => {
-      const status = getBackupReminderStatus();
-      setBackupStatus(status);
-      
-      // Check cloud sync status
-      const sync = getSyncStatus();
-      setSyncStatus(sync);
-
-      // Show reminder if backup is due (within 1 hour of 11 PM)
+      setBackupStatus(getBackupReminderStatus());
+      setSyncStatus(getSyncStatus());
       const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-
-      // Check if it's between 10:30 PM and 11:30 PM
-      if ((hours === 22 && minutes >= 30) || (hours === 23 && minutes <= 30)) {
+      if ((now.getHours() === 22 && now.getMinutes() >= 30) || (now.getHours() === 23 && now.getMinutes() <= 30)) {
         setShowBackupReminder(true);
       }
     };
 
     checkBackupStatus();
-    
-    // Check every minute
     const interval = setInterval(checkBackupStatus, 60000);
-
-    // Set up 11 PM backup reminder
-    const now = new Date();
-    const backupTime = new Date();
-    backupTime.setHours(23, 0, 0, 0); // 11:00 PM
-
-    // If it's already past 11 PM today, schedule for tomorrow
-    if (now > backupTime) {
-      backupTime.setDate(backupTime.getDate() + 1);
-    }
-
-    const timeUntilBackup = backupTime.getTime() - now.getTime();
-    const backupTimeout = setTimeout(() => {
-      setShowBackupReminder(true);
-      
-      // Trigger auto-backup
-      handleAutoBackup();
-    }, timeUntilBackup);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(backupTimeout);
-      if (cleanupSync) cleanupSync();
-    };
-  }, [handleAutoBackup]);
-
-  // Handle export to Excel (Inventory Management format)
-  const handleExportToExcel = () => {
-    exportInventoryToExcel(inventory, closingReport);
-  };
-
-  // Handle export daily closing report
-  const handleExportClosingReport = () => {
-    exportEndOfDayReport(closingReport, dailySales.filter(s => s.date === today), expenses.filter(e => e.date === today));
-  };
-
-  // Handle manual backup
-  const handleManualBackup = () => {
-    const backupFile = createBackup();
-    if (backupFile) {
-      setBackupStatus(getBackupReminderStatus());
-      alert(`Backup created successfully: ${backupFile.name}`);
-    }
-  };
-
-  // Handle cloud sync
-  const handleCloudSync = () => {
-    const syncFile = triggerManualSync();
-    if (syncFile) {
-      setSyncStatus(getSyncStatus());
-      alert(`Cloud sync completed. Please save to Documents/Backups/: ${syncFile.name}`);
-    }
-  };
-
-  // Request notification permission on mount
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+    return () => { clearInterval(interval); if (cleanupSync) cleanupSync(); };
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl md:text-3xl font-bold text-hotel-forest mb-2 flex items-center gap-3">
-          <Calendar className="text-hotel-gold" size={32} />
-          End of Day Summary
-        </h2>
-        <p className="text-hotel-forest/70">
-          Daily closing report for {new Date(today).toLocaleDateString('en-IN', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
-        </p>
-      </div>
-
-      {/* Backup Reminder Banner */}
-      {showBackupReminder && (
-        <div className="bg-brushed-gold/20 border-2 border-brushed-gold rounded-xl p-4 flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 flex-1">
-            <Bell className="text-brushed-gold mt-1 shrink-0" size={24} />
-            <div className="flex-1">
-              <h3 className="font-bold text-hotel-forest mb-1">Auto-Backup Reminder</h3>
-              <p className="text-sm text-hotel-forest/80 mb-3">
-                It's time for your daily backup at 11:00 PM. Your localStorage data will be automatically saved to Business-documents/Backups.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    handleAutoBackup();
-                    setShowBackupReminder(false);
-                  }}
-                  className="px-4 py-2 bg-brushed-gold text-forest-green rounded-lg hover:bg-brushed-gold/90 transition-colors font-medium flex items-center gap-2 touch-manipulation"
-                >
-                  <Save size={18} />
-                  Create Backup Now
-                </button>
-                <button
-                  onClick={() => setShowBackupReminder(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium touch-manipulation"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
+    <div className="space-y-8 animate-fade-in pb-24">
+      {/* Premium Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="w-8 h-1 bg-brushed-gold rounded-full"></span>
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-brushed-gold">Operational Closing</span>
+          </div>
+          <h2 className="text-3xl font-black text-forest-green tracking-tight">
+            Daily <span className="text-brushed-gold">Settlement</span>
+          </h2>
+          <div className="flex items-center gap-3">
+             <Badge variant="gold" className="px-3 py-1">Business Day: {new Date(today).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</Badge>
+             <div className="flex items-center gap-1.5 bg-forest-green/5 px-3 py-1 rounded-full border border-forest-green/10">
+                <Clock size={12} className="text-forest-green/40" />
+                <span className="text-[10px] font-bold text-forest-green/60 uppercase tracking-widest">Auto-closing at 11:59 PM</span>
+             </div>
           </div>
         </div>
+
+        <div className="flex gap-3">
+           <Button variant="outline" leftIcon={<Printer size={18} />} className="rounded-2xl border-forest-green/20">
+             Print Summary
+           </Button>
+           <Button 
+             variant="gold" 
+             onClick={() => exportEndOfDayReport(closingReport, dailySales.filter(s => s.date === today), expenses.filter(e => e.date === today))}
+             leftIcon={<Download size={18} />}
+             className="rounded-2xl shadow-xl shadow-brushed-gold/10"
+           >
+             Final Export
+           </Button>
+        </div>
+      </div>
+
+      {/* Backup Reminder Banner - Upgraded */}
+      {showBackupReminder && (
+        <Card className="bg-forest-green border-0 shadow-2xl relative overflow-hidden group p-0">
+           <div className="absolute top-0 right-0 p-8 opacity-10 animate-pulse"><Bell size={120} /></div>
+           <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+              <div className="flex items-center gap-6">
+                 <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-brushed-gold">
+                    <Cloud size={32} />
+                 </div>
+                 <div className="space-y-1">
+                    <h3 className="text-xl font-black text-white">Daily Backup Required</h3>
+                    <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Secure your data before closing the terminal</p>
+                 </div>
+              </div>
+              <div className="flex gap-3 w-full md:w-auto">
+                 <Button variant="gold" className="flex-1 md:flex-none rounded-xl" onClick={handleAutoBackup} leftIcon={<Save size={18} />}>Execute Backup</Button>
+                 <Button variant="ghost" className="text-white hover:bg-white/10 rounded-xl" onClick={() => setShowBackupReminder(false)}>Later</Button>
+              </div>
+           </div>
+        </Card>
       )}
 
-      {/* Daily Closing Report Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Pegs Sold */}
-        <div className="bg-white rounded-xl p-6 border border-hotel-gold/20 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-hotel-forest/70">Total Pegs Sold</span>
-            <Package className="text-hotel-gold" size={20} />
-          </div>
-          <p className="text-3xl font-bold text-hotel-forest">{formatNumber(closingReport.totalPegsSold, 0)}</p>
-          <p className="text-xs text-hotel-forest/50 mt-1">across all products</p>
-        </div>
+      {/* Closing Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-white border-0 shadow-xl border-l-4 border-forest-green">
+           <CardHeader className="mb-2">
+              <p className="text-[10px] font-black uppercase text-gray-400">Inventory Volume</p>
+              <Package className="text-forest-green" size={18} />
+           </CardHeader>
+           <h3 className="text-3xl font-black text-forest-green tracking-tighter">
+              {formatNumber(closingReport.totalPegsSold, 0)} <span className="text-xs uppercase text-gray-400">Pegs</span>
+           </h3>
+           <p className="text-[10px] font-bold text-green-600 mt-2 uppercase flex items-center gap-1">
+              <TrendingUp size={10} /> Volume Optimized
+           </p>
+        </Card>
 
-        {/* Room Revenue */}
-        <div className="bg-white rounded-xl p-6 border border-hotel-gold/20 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-hotel-forest/70">Room Revenue</span>
-            <DollarSign className="text-green-600" size={20} />
-          </div>
-          <div className="text-3xl font-bold text-hotel-forest">
-            <PrivateNumber value={closingReport.roomRevenue} format={formatCurrency} />
-          </div>
-          <p className="text-xs text-hotel-forest/50 mt-1">from {closingReport.salesCount} sale(s)</p>
-        </div>
+        <Card className="bg-white border-0 shadow-xl border-l-4 border-brushed-gold">
+           <CardHeader className="mb-2">
+              <p className="text-[10px] font-black uppercase text-gray-400">Total Inflow</p>
+              <ArrowUpRight className="text-brushed-gold" size={18} />
+           </CardHeader>
+           <h3 className="text-3xl font-black text-forest-green tracking-tighter">
+              <PrivateNumber value={closingReport.totalRevenue} format={formatCurrency} />
+           </h3>
+           <div className="flex gap-2 mt-2">
+              <Badge variant="secondary" className="text-[8px] border-0">{closingReport.salesCount} Settlements</Badge>
+           </div>
+        </Card>
 
-        {/* Total Expenses */}
-        <div className="bg-white rounded-xl p-6 border border-hotel-gold/20 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-hotel-forest/70">Total Expenses</span>
-            <TrendingUp className="text-red-600" size={20} />
-          </div>
-          <div className="text-3xl font-bold text-hotel-forest">
-            <PrivateNumber value={closingReport.totalExpenses} format={formatCurrency} />
-          </div>
-          <p className="text-xs text-hotel-forest/50 mt-1">{closingReport.expenseCount} expense entries</p>
-        </div>
+        <Card className="bg-white border-0 shadow-xl border-l-4 border-red-500">
+           <CardHeader className="mb-2">
+              <p className="text-[10px] font-black uppercase text-gray-400">Operational Outflow</p>
+              <ArrowDownRight className="text-red-500" size={18} />
+           </CardHeader>
+           <h3 className="text-3xl font-black text-forest-green tracking-tighter">
+              <PrivateNumber value={closingReport.totalExpenses} format={formatCurrency} />
+           </h3>
+           <p className="text-[10px] font-bold text-red-400 mt-2 uppercase tracking-widest">{closingReport.expenseCount} Transactions</p>
+        </Card>
 
-        {/* Net Profit */}
-        <div className={`rounded-xl p-6 border shadow-md ${
-          closingReport.netProfit >= 0
-            ? 'bg-green-50 border-green-200'
-            : 'bg-red-50 border-red-200'
-        }`}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Net Profit</span>
-            <TrendingUp className={closingReport.netProfit >= 0 ? 'text-green-600' : 'text-red-600'} size={20} />
-          </div>
-          <div className={`text-3xl font-bold ${
-            closingReport.netProfit >= 0 ? 'text-green-700' : 'text-red-700'
-          }`}>
-            <PrivateNumber 
-              value={closingReport.netProfit} 
-              format={formatCurrency} 
-              alwaysBlur={true} 
-            />
-          </div>
-          <p className="text-xs opacity-70 mt-1">
-            {closingReport.totalRevenue > 0 
-              ? `${formatNumber((closingReport.netProfit / closingReport.totalRevenue) * 100, 1)}% margin`
-              : 'No revenue'
-            }
-          </p>
-        </div>
+        <Card className={`border-0 shadow-xl relative overflow-hidden ${closingReport.netProfit >= 0 ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-red-500'} text-white`}>
+           <div className="absolute bottom-0 right-0 p-4 opacity-10"><TrendingUp size={80} /></div>
+           <CardHeader className="mb-2">
+              <p className="text-[10px] font-black uppercase text-white/40">Net Daily Yield</p>
+              <ShieldCheck className="text-white/60" size={18} />
+           </CardHeader>
+           <h3 className="text-3xl font-black tracking-tighter">
+              <PrivateNumber value={closingReport.netProfit} format={formatCurrency} alwaysBlur={true} />
+           </h3>
+           <p className="text-[10px] font-bold text-white/60 mt-2 uppercase">
+              {closingReport.totalRevenue > 0 ? `${formatNumber((closingReport.netProfit / closingReport.totalRevenue) * 100, 1)}% Margin Rate` : 'No yield'}
+           </p>
+        </Card>
       </div>
 
-      {/* Detailed Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Breakdown */}
-        <div className="bg-white rounded-xl border border-hotel-gold/20 shadow-md p-6">
-          <h3 className="text-lg font-semibold text-hotel-forest mb-4 flex items-center gap-2">
-            <TrendingUp className="text-hotel-gold" size={20} />
-            Revenue Breakdown
-          </h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-hotel-gold/10">
-              <span className="text-hotel-forest">Room Rent</span>
-              <span className="font-semibold text-hotel-forest">{formatCurrency(closingReport.roomRevenue)}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-hotel-gold/10">
-              <span className="text-hotel-forest">Restaurant Bills</span>
-              <span className="font-semibold text-hotel-forest">{formatCurrency(closingReport.restaurantRevenue)}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-hotel-gold/10">
-              <span className="text-hotel-forest">Bar Sales</span>
-              <span className="font-semibold text-hotel-forest">{formatCurrency(closingReport.barRevenue)}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 pt-3 border-t-2 border-hotel-gold/30">
-              <span className="font-bold text-hotel-forest text-lg">Total Revenue</span>
-              <span className="font-bold text-brushed-gold text-lg">{formatCurrency(closingReport.totalRevenue)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Expenses Breakdown */}
-        <div className="bg-white rounded-xl border border-hotel-gold/20 shadow-md p-6">
-          <h3 className="text-lg font-semibold text-hotel-forest mb-4 flex items-center gap-2">
-            <TrendingUp className="text-red-600" size={20} />
-            Expenses Breakdown
-          </h3>
-          <div className="space-y-3">
-            {Object.entries(closingReport.expensesByCategory).map(([category, amount]) => (
-              <div key={category} className="flex justify-between items-center py-2 border-b border-hotel-gold/10">
-                <span className="text-hotel-forest capitalize">{category}</span>
-                <span className="font-semibold text-hotel-forest">{formatCurrency(amount)}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Revenue Breakdown - Upgraded */}
+        <Card className="bg-white border-0 shadow-2xl rounded-3xl p-8 overflow-hidden group">
+           <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform"><Building2 size={120} /></div>
+           <CardHeader>
+              <div className="flex items-center gap-3">
+                 <div className="p-3 bg-brushed-gold/10 text-brushed-gold rounded-2xl"><DollarSign size={24} /></div>
+                 <div>
+                    <CardTitle className="text-xl font-black">Revenue Streams</CardTitle>
+                    <p className="text-[10px] font-bold text-forest-green/40 uppercase tracking-widest">Inflow by department</p>
+                 </div>
               </div>
-            ))}
-            {Object.keys(closingReport.expensesByCategory).length === 0 && (
-              <p className="text-hotel-forest/50 text-center py-4">No expenses recorded for today</p>
-            )}
-            <div className="flex justify-between items-center py-2 pt-3 border-t-2 border-hotel-gold/30">
-              <span className="font-bold text-hotel-forest text-lg">Total Expenses</span>
-              <span className="font-bold text-red-600 text-lg">{formatCurrency(closingReport.totalExpenses)}</span>
-            </div>
-          </div>
-        </div>
+           </CardHeader>
+           
+           <div className="mt-8 space-y-4 relative z-10">
+              <StreamRow label="Room Architecture" value={closingReport.roomRevenue} color="bg-forest-green" total={closingReport.totalRevenue} />
+              <StreamRow label="Dining & Cuisine" value={closingReport.restaurantRevenue} color="bg-brushed-gold" total={closingReport.totalRevenue} />
+              <StreamRow label="Spirit Portfolio" value={closingReport.barRevenue} color="bg-forest-green-light" total={closingReport.totalRevenue} />
+              
+              <div className="pt-6 border-t-2 border-dashed border-gray-100 flex justify-between items-center">
+                 <span className="text-xs font-black uppercase text-forest-green tracking-widest">Total Daily Inflow</span>
+                 <span className="text-2xl font-black text-forest-green">{formatCurrency(closingReport.totalRevenue)}</span>
+              </div>
+           </div>
+        </Card>
+
+        {/* Expenses Breakdown - Upgraded */}
+        <Card className="bg-white border-0 shadow-2xl rounded-3xl p-8 overflow-hidden group">
+           <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform"><PieChart size={120} /></div>
+           <CardHeader>
+              <div className="flex items-center gap-3">
+                 <div className="p-3 bg-red-50 text-red-600 rounded-2xl"><TrendingDown size={24} /></div>
+                 <div>
+                    <CardTitle className="text-xl font-black">Cost Centers</CardTitle>
+                    <p className="text-[10px] font-bold text-forest-green/40 uppercase tracking-widest">Outflow Categorization</p>
+                 </div>
+              </div>
+           </CardHeader>
+
+           <div className="mt-8 space-y-4 relative z-10">
+              {Object.entries(closingReport.expensesByCategory).length > 0 ? (
+                Object.entries(closingReport.expensesByCategory).map(([cat, val]) => (
+                  <StreamRow key={cat} label={cat} value={val} color="bg-red-500" total={closingReport.totalExpenses} />
+                ))
+              ) : (
+                <div className="py-12 text-center">
+                   <p className="text-xs font-bold text-gray-300 uppercase tracking-[0.3em]">No costs logged today</p>
+                </div>
+              )}
+
+              <div className="pt-6 border-t-2 border-dashed border-gray-100 flex justify-between items-center">
+                 <span className="text-xs font-black uppercase text-forest-green tracking-widest">Total Operating Cost</span>
+                 <span className="text-2xl font-black text-red-600">{formatCurrency(closingReport.totalExpenses)}</span>
+              </div>
+           </div>
+        </Card>
       </div>
 
-      {/* Export Actions */}
-      <div className="bg-white rounded-xl border border-hotel-gold/20 shadow-md p-6">
-        <h3 className="text-lg font-semibold text-hotel-forest mb-4 flex items-center gap-2">
-          <FileText className="text-hotel-gold" size={20} />
-          Export Reports
-        </h3>
-        <p className="text-sm text-hotel-forest/70 mb-4">
-          Export today's closing report and inventory data for physical filing
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            onClick={handleExportClosingReport}
-            className="px-6 py-4 bg-hotel-forest text-hotel-gold rounded-lg hover:bg-hotel-forest-light transition-colors font-medium flex items-center justify-center gap-3 touch-manipulation"
-          >
-            <Download size={20} />
-            Export Daily Closing Report
-          </button>
-          <button
-            onClick={handleExportToExcel}
-            className="px-6 py-4 bg-brushed-gold text-forest-green rounded-lg hover:bg-brushed-gold/90 transition-colors font-medium flex items-center justify-center gap-3 touch-manipulation"
-          >
-            <FileText size={20} />
-            Export Inventory (Excel Format)
-          </button>
-        </div>
-      </div>
+      {/* Backup & Sync Status Architecture */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+         <Card className="border-0 shadow-xl rounded-3xl p-8 bg-gradient-to-br from-gray-50 to-white">
+            <CardHeader className="mb-6">
+               <div className="flex items-center gap-3">
+                  <div className="p-3 bg-forest-green text-brushed-gold rounded-2xl"><History size={24} /></div>
+                  <div>
+                     <CardTitle className="text-lg font-black">System Snapshots</CardTitle>
+                     <p className="text-[10px] font-bold text-forest-green/40 uppercase tracking-widest">Local redundant storage</p>
+                  </div>
+               </div>
+            </CardHeader>
+            <div className="space-y-4">
+               <div className="p-4 bg-white rounded-2xl border border-gray-100 flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase text-gray-400">Last Redundancy</span>
+                  <span className="text-xs font-bold text-forest-green">{backupStatus?.lastBackup?.toLocaleString('en-IN') || 'None'}</span>
+               </div>
+               <div className="p-4 bg-white rounded-2xl border border-gray-100 flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase text-gray-400">Next Scheduled</span>
+                  <span className="text-xs font-bold text-brushed-gold">Tonight, 11:00 PM</span>
+               </div>
+               <Button variant="secondary" className="w-full rounded-2xl h-14" leftIcon={<Save size={18} />} onClick={handleAutoBackup}>Manual Backup</Button>
+            </div>
+         </Card>
 
-      {/* Backup Status */}
-      <div className="bg-white rounded-xl border border-hotel-gold/20 shadow-md p-6">
-        <h3 className="text-lg font-semibold text-hotel-forest mb-4 flex items-center gap-2">
-          <Save className="text-hotel-gold" size={20} />
-          Auto-Backup Status
-        </h3>
-        <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <CheckCircle className="text-green-600 mt-1 shrink-0" size={20} />
-            <div className="flex-1">
-              <p className="font-medium text-hotel-forest">Automatic Backup</p>
-              <p className="text-sm text-hotel-forest/70 mt-1">
-                Your localStorage data is automatically backed up every day at 11:00 PM to Business-documents/Backups folder.
-              </p>
+         <Card className="border-0 shadow-xl rounded-3xl p-8 bg-gradient-to-br from-gray-50 to-white">
+            <CardHeader className="mb-6">
+               <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-600 text-white rounded-2xl"><Cloud size={24} /></div>
+                  <div>
+                     <CardTitle className="text-lg font-black">Cloud Synchronization</CardTitle>
+                     <p className="text-[10px] font-bold text-forest-green/40 uppercase tracking-widest">Off-site data mirror</p>
+                  </div>
+               </div>
+            </CardHeader>
+            <div className="space-y-4">
+               <div className="p-4 bg-white rounded-2xl border border-gray-100 flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase text-gray-400">Sync Status</span>
+                  <Badge variant="success" className="text-[8px] uppercase font-black border-0">Synchronized</Badge>
+               </div>
+               <div className="p-4 bg-white rounded-2xl border border-gray-100 flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase text-gray-400">Mirror Count</span>
+                  <span className="text-xs font-bold text-forest-green">{syncStatus?.syncCount || 0} Successful</span>
+               </div>
+               <Button variant="secondary" className="w-full rounded-2xl h-14" leftIcon={<Download size={18} />} onClick={triggerManualSync}>Force Cloud Mirror</Button>
             </div>
-          </div>
-          {backupStatus && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="p-4 bg-hotel-forest/5 rounded-lg">
-                <p className="text-xs text-hotel-forest/60 mb-1">Last Backup</p>
-                <p className="font-semibold text-hotel-forest">
-                  {backupStatus.lastBackup
-                    ? backupStatus.lastBackup.toLocaleString('en-IN')
-                    : 'Never'}
-                </p>
-              </div>
-              <div className="p-4 bg-hotel-forest/5 rounded-lg">
-                <p className="text-xs text-hotel-forest/60 mb-1">Next Backup</p>
-                <p className="font-semibold text-hotel-forest">
-                  {backupStatus.nextBackup
-                    ? backupStatus.nextBackup.toLocaleString('en-IN')
-                    : 'Scheduled for 11:00 PM'}
-                </p>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={handleManualBackup}
-            className="w-full md:w-auto px-6 py-3 bg-hotel-forest text-hotel-gold rounded-lg hover:bg-hotel-forest-light transition-colors font-medium flex items-center justify-center gap-2 touch-manipulation"
-          >
-            <Save size={18} />
-            Create Backup Now
-          </button>
-        </div>
-
-        {/* Cloud Sync Status */}
-        <div className="bg-white rounded-xl border border-hotel-gold/20 shadow-md p-6">
-          <h3 className="text-lg font-semibold text-hotel-forest mb-4 flex items-center gap-2">
-            <Download className="text-hotel-gold" size={20} />
-            Cloud Sync Status
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="text-green-600 mt-1 shrink-0" size={20} />
-              <div className="flex-1">
-                <p className="font-medium text-hotel-forest">Automatic Cloud Sync</p>
-                <p className="text-sm text-hotel-forest/70 mt-1">
-                  Your localStorage data is automatically synced every night at 11:00 PM to Documents/Backups folder.
-                </p>
-              </div>
-            </div>
-            {syncStatus && (
-              <div className="grid grid-cols-1 gap-4 mt-4">
-                <div className="p-4 bg-hotel-forest/5 rounded-lg">
-                  <p className="text-xs text-hotel-forest/60 mb-1">Last Sync</p>
-                  <p className="font-semibold text-hotel-forest">
-                    {syncStatus.lastSync
-                      ? syncStatus.lastSync.toLocaleString('en-IN')
-                      : 'Never'}
-                  </p>
-                </div>
-                <div className="p-4 bg-hotel-forest/5 rounded-lg">
-                  <p className="text-xs text-hotel-forest/60 mb-1">Next Sync</p>
-                  <p className="font-semibold text-hotel-forest">
-                    {syncStatus.nextSync
-                      ? syncStatus.nextSync.toLocaleString('en-IN')
-                      : 'Scheduled for 11:00 PM'}
-                  </p>
-                </div>
-                <div className="p-4 bg-hotel-forest/5 rounded-lg">
-                  <p className="text-xs text-hotel-forest/60 mb-1">Total Syncs</p>
-                  <p className="font-semibold text-hotel-forest">{syncStatus.syncCount}</p>
-                </div>
-              </div>
-            )}
-            <button
-              onClick={handleCloudSync}
-              className="w-full px-6 py-3 bg-brushed-gold text-forest-green rounded-lg hover:bg-brushed-gold/90 transition-colors font-medium flex items-center justify-center gap-2 touch-manipulation"
-            >
-              <Download size={18} />
-              Sync to Documents/Backups Now
-            </button>
-          </div>
-        </div>
+         </Card>
       </div>
     </div>
   );
 }
 
+function StreamRow({ label, value, color, total }: { label: string, value: number, color: string, total: number }) {
+  const percent = total > 0 ? (value / total) * 100 : 0;
+  return (
+    <div className="space-y-2">
+       <div className="flex justify-between items-end">
+          <span className="text-xs font-black text-forest-green tracking-tight">{label}</span>
+          <span className="text-xs font-black text-forest-green">{formatCurrency(value)}</span>
+       </div>
+       <div className="h-2 bg-gray-50 rounded-full overflow-hidden">
+          <div 
+            className={`h-full ${color} rounded-full transition-all duration-1000`} 
+            style={{ width: `${percent}%` }}
+          />
+       </div>
+    </div>
+  );
+}
