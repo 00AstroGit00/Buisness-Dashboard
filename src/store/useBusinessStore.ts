@@ -23,7 +23,7 @@ export interface Expense {
   description: string;
 }
 
-export type RoomStatus = 'vacant' | 'occupied' | 'cleaning';
+export type RoomStatus = 'vacant' | 'occupied' | 'cleaning' | 'maintenance';
 
 export interface RoomDetail {
   id: string;
@@ -38,9 +38,17 @@ export interface BusinessState {
   inventory: ProductInventory[];
   inventoryItems: ProductInventory[];
   isLoading: boolean;
+  isOnline: boolean;
+  offlineQueue: Array<{
+    id: string;
+    type: 'sale' | 'room_update';
+    data: any;
+    timestamp: number;
+  }>;
+  lastSyncTimestamp: number;
   expenses: Expense[];
   dailySales: Record<string, { id?: string; date: string; roomRent: number; restaurantBills: number; barSales: number }>;
-  rooms: Record<string, RoomDetail>; // Keyed by room number/ID
+  rooms: Record<string, RoomDetail & { lastUpdated?: number }>; // Enhanced with timestamp for conflict resolution
   lastHydrated: string | null;
   staff?: Array<any>;
   error?: string | null;
@@ -85,6 +93,8 @@ export interface BusinessState {
 
   // Actions - Rooms
   updateRoomStatus: (roomId: string, status: RoomStatus, guest?: string) => void;
+  setOnlineStatus: (isOnline: boolean) => void;
+  processOfflineQueue: () => Promise<void>;
   
   // Global
   resetAll: () => void;
@@ -97,6 +107,9 @@ export const useBusinessStore = create<BusinessState>()(
       inventory: [],
       inventoryItems: [],
       isLoading: false,
+      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      offlineQueue: [],
+      lastSyncTimestamp: Date.now(),
       dailySales: {},
       staff: [],
       error: null,
@@ -225,6 +238,18 @@ export const useBusinessStore = create<BusinessState>()(
       },
 
       recordSale: (productId, volume, quantity) => {
+        const now = Date.now();
+        if (!get().isOnline) {
+          set((state) => ({
+            offlineQueue: [...state.offlineQueue, {
+              id: `sale-${productId}-${now}`,
+              type: 'sale',
+              data: { productId, volume, quantity },
+              timestamp: now
+            }]
+          }));
+        }
+
         set((state) => {
           const updatedInventory = state.inventory.map((item) => {
             const itemId = `${item.productName.replace(/\s+/g, '_')}_${item.config.size}`;
@@ -255,8 +280,63 @@ export const useBusinessStore = create<BusinessState>()(
         expenses: state.expenses.filter((e) => id !== e.id)
       })),
 
+      setOnlineStatus: (isOnline) => {
+        const wasOffline = !get().isOnline;
+        set({ isOnline });
+        if (isOnline && wasOffline) {
+          get().processOfflineQueue();
+        }
+      },
+
+      processOfflineQueue: async () => {
+        const { offlineQueue } = get();
+        if (offlineQueue.length === 0) return;
+
+        console.log(`📡 Re-syncing ${offlineQueue.length} offline transactions...`);
+        
+        // Sorting by timestamp to ensure chronological replay
+        const sortedQueue = [...offlineQueue].sort((a, b) => a.timestamp - b.timestamp);
+
+        for (const item of sortedQueue) {
+          if (item.type === 'sale') {
+            get().recordSale(item.data.productId, item.data.volume, item.data.quantity);
+          } else if (item.type === 'room_update') {
+            get().updateRoomStatus(item.data.roomId, item.data.status, item.data.guest);
+          }
+        }
+
+        set({ offlineQueue: [], lastSyncTimestamp: Date.now() });
+        console.log('✅ Offline queue integrated and cleared.');
+        
+        // Trigger Broadcast for other tabs
+        if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+          const channel = new BroadcastChannel('deepa_sync');
+          channel.postMessage({ type: 'SYNC_COMPLETE', timestamp: Date.now() });
+        }
+      },
+
       // --- Room Actions ---
       updateRoomStatus: (roomId, status, guest) => {
+        const now = Date.now();
+        const currentRoom = get().rooms[roomId];
+
+        // Conflict Resolution: Latest timestamp wins
+        if (currentRoom && currentRoom.lastUpdated && currentRoom.lastUpdated > now) {
+          console.warn(`⚠️ Conflict detected for Room ${roomId}. Stale update ignored.`);
+          return;
+        }
+
+        if (!get().isOnline) {
+          set((state) => ({
+            offlineQueue: [...state.offlineQueue, {
+              id: `room-${roomId}-${now}`,
+              type: 'room_update',
+              data: { roomId, status, guest },
+              timestamp: now
+            }]
+          }));
+        }
+
         set((state) => {
           const room = state.rooms[roomId] || { id: roomId, number: roomId, type: 'Standard', status: 'vacant' };
           return {
@@ -266,6 +346,7 @@ export const useBusinessStore = create<BusinessState>()(
                 ...room,
                 status,
                 currentGuest: guest || room.currentGuest,
+                lastUpdated: now
               },
             },
           };

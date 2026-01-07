@@ -97,18 +97,21 @@ export default function LazyImage({
 
       {/* Actual Image */}
       {isInView && (
-        <img
-          ref={imgRef}
-          src={hasError ? fallback : src}
-          alt={alt}
-          onLoad={handleLoad}
-          onError={handleError}
-          className={`transition-opacity duration-300 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          } ${className}`}
-          loading="lazy"
-          {...props}
-        />
+        <picture>
+          {src.endsWith('.webp') && <source srcSet={src} type="image/webp" />}
+          <img
+            ref={imgRef}
+            src={hasError ? fallback : src}
+            alt={alt}
+            onLoad={handleLoad}
+            onError={handleError}
+            className={`transition-opacity duration-500 ${
+              isLoaded ? 'opacity-100' : 'opacity-0'
+            } ${className}`}
+            loading="lazy"
+            {...props}
+          />
+        </picture>
       )}
     </div>
   );

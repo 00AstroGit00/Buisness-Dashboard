@@ -8,7 +8,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { authenticateWithWebAuthn, registerWebAuthnCredential, hasWebAuthnCredentials, getDeviceName, isWebAuthnSupported } from '../utils/webauthn';
 import { logLoginSuccess, logLoginFailure, logLogout } from '../utils/securityLog';
 
-export type UserRole = 'admin' | 'accountant';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'STAFF';
 
 export interface User {
   id: string;
@@ -18,8 +18,9 @@ export interface User {
 
 // User database with IDs for WebAuthn
 const USERS: Array<User & { pin: string }> = [
-  { id: 'admin-001', username: 'Administrator', role: 'admin', pin: '1234' },
-  { id: 'account-001', username: 'Accountant', role: 'accountant', pin: '5678' },
+  { id: 'admin-001', username: 'Deepa Owner', role: 'ADMIN', pin: '1234' },
+  { id: 'manager-001', username: 'Front Desk', role: 'MANAGER', pin: '2222' },
+  { id: 'staff-001', username: 'Bar Waiter', role: 'STAFF', pin: '3333' },
 ];
 
 interface AuthContextType {
@@ -122,13 +123,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasAccess = (page: string): boolean => {
     if (!user) return false;
 
-    // Admin has full access
-    if (user.role === 'admin') return true;
+    // 1. ADMIN (Owner): Absolute access to all intelligence and reports
+    if (user.role === 'ADMIN') return true;
 
-    // Accountant access rules
-    if (user.role === 'accountant') {
-      const accountantPages = ['dashboard', 'inventory', 'purchases', 'accounting', 'endofday', 'excise'];
-      return accountantPages.includes(page);
+    // 2. MANAGER (Front Desk): Operations focus
+    if (user.role === 'MANAGER') {
+      const managerPages = ['dashboard', 'rooms', 'inventory', 'billing', 'endofday'];
+      return managerPages.includes(page);
+    }
+
+    // 3. STAFF (Bar/Waiter): Execution focus
+    if (user.role === 'STAFF') {
+      const staffPages = ['dashboard', 'inventory', 'billing'];
+      return staffPages.includes(page);
     }
 
     return false;

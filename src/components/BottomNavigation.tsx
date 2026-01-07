@@ -1,16 +1,16 @@
-/**
- * Bottom Navigation Component
- * Thumb-friendly navigation for Samsung S23 Ultra and mobile devices
- * All primary controls within thumb-reach zone
- */
-
-import { LayoutDashboard, Package, Calculator, UserCircle, Folder, ReceiptText, TrendingUp, Settings, Home, ShoppingCart, FileText, Shield, Users, BarChart3, Archive, Wrench } from 'lucide-react';
+import { 
+  Home, Package, Calculator, Users, 
+  BarChart3, Shield, ReceiptText, Wrench, 
+  Menu, Building2, Search
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import type React from 'react';
+import React from 'react';
 
 interface BottomNavigationProps {
   currentPage: string;
   onPageChange: (page: string) => void;
+  onSearchClick: () => void;
 }
 
 interface NavItem {
@@ -19,58 +19,140 @@ interface NavItem {
   icon: React.ReactElement;
 }
 
-export default function BottomNavigation({ currentPage, onPageChange }: BottomNavigationProps) {
+export default function BottomNavigation({ currentPage, onPageChange, onSearchClick }: BottomNavigationProps) {
+
   const { hasAccess } = useAuth();
 
-  // All available nav items
-  const allNavItems: Array<NavItem & { adminOnly?: boolean }> = [
-    { id: 'dashboard', label: 'Home', icon: <Home size={24} /> },
-    { id: 'inventory', label: 'Stock', icon: <Package size={24} /> },
-    { id: 'accounting', label: 'Finance', icon: <Calculator size={24} /> },
-    { id: 'employees', label: 'Staff', icon: <Users size={24} />, adminOnly: true },
-    { id: 'analytics', label: 'Analytics', icon: <BarChart3 size={24} />, adminOnly: true },
-    { id: 'compliance', label: 'Compliance', icon: <Shield size={24} />, adminOnly: true },
-    { id: 'billing', label: 'Billing', icon: <ReceiptText size={24} />, adminOnly: true },
-    { id: 'settings', label: 'Settings', icon: <Wrench size={24} />, adminOnly: true }
+
+
+  // 2026 Primary Actions for Mobile
+
+  const allNavItems: Array<NavItem & { adminOnly?: boolean; isSearch?: boolean }> = [
+
+    { id: 'inventory', label: 'Stock', icon: <Package size={20} /> },
+
+    { id: 'rooms', label: 'Rooms', icon: <Building2 size={20} /> },
+
+    { id: 'search', label: 'Search', icon: <Search size={20} />, isSearch: true },
+
+    { id: 'billing', label: 'Sales', icon: <ReceiptText size={20} /> },
+
+    { id: 'analytics', label: 'Stats', icon: <BarChart3 size={20} />, adminOnly: true }
+
   ];
 
+
+
   // Filter based on access
-  const navItems = allNavItems.filter((item) => hasAccess(item.id));
+
+  const navItems = allNavItems.filter((item) => item.isSearch || hasAccess(item.id)).slice(0, 5);
+
+
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-forest-green to-forest-green-light border-t-2 border-brushed-gold/30 shadow-2xl lg:hidden">
-      <div className="flex items-center justify-around h-20 px-2 py-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}>
-        {navItems.map((item) => {
-          const isActive = currentPage === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onPageChange(item.id)}
-              className={`
-                flex flex-col items-center justify-center
-                min-h-[60px] min-w-[60px] px-2 py-1.5 rounded-2xl
-                transition-all duration-200 touch-manipulation
-                ${isActive
-                  ? 'bg-gradient-to-b from-brushed-gold to-brushed-gold-light text-forest-green shadow-xl scale-105'
-                  : 'text-brushed-gold/80 hover:text-brushed-gold hover:bg-forest-green/30'
-                }
-              `}
-              aria-label={item.label}
-            >
-              <div className={`${isActive ? 'scale-110' : ''} transition-transform`}>
-                {item.icon}
-              </div>
-              <span className={`text-[10px] font-medium mt-1 ${isActive ? 'font-bold' : ''}`}>
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+
+    <nav className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-8 lg:hidden pointer-events-none">
+
+      <div className="max-w-lg mx-auto pointer-events-auto">
+
+        <div className="bg-[#050a09]/60 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-around h-20 px-4 relative overflow-hidden">
+
+          {/* Subtle background glow */}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-brushed-gold/5 to-transparent pointer-events-none"></div>
+
+          
+
+          {navItems.map((item) => {
+
+            const isActive = currentPage === item.id;
+
+            return (
+
+              <button
+
+                key={item.id}
+
+                onClick={() => item.isSearch ? onSearchClick() : onPageChange(item.id)}
+
+                className={`
+
+                  relative flex flex-col items-center justify-center
+
+                  min-h-[56px] min-w-[56px] rounded-2xl
+
+                  transition-all duration-500 ease-out active:scale-90
+
+                  ${isActive
+
+                    ? 'text-brushed-gold'
+
+                    : 'text-white/30 hover:text-white/60'
+
+                  }
+
+                `}
+
+                aria-label={item.label}
+
+              >
+
+                {/* Active Indicator Bar */}
+
+                {isActive && (
+
+                  <motion.div 
+
+                    layoutId="bottom-nav-active"
+
+                    className="absolute -top-4 w-8 h-1 bg-brushed-gold rounded-full shadow-[0_0_12px_rgba(197,160,89,1)]"
+
+                  />
+
+                )}
+
+                
+
+                <div className={`relative z-10 transition-transform duration-500 ${isActive ? 'scale-125 -translate-y-1' : ''}`}>
+
+                  {item.icon}
+
+                </div>
+
+                
+
+                <span className={`
+
+                  relative z-10 text-[8px] font-black uppercase tracking-[0.2em] mt-2
+
+                  transition-all duration-500
+
+                  ${isActive ? 'opacity-100' : 'opacity-40'}
+
+                `}>
+
+                  {item.label}
+
+                </span>
+
+              </button>
+
+            );
+
+          })}
+
+        </div>
+
       </div>
 
-      {/* Safe area spacer for devices with home indicator */}
-      <div className="h-safe-area-inset-bottom bg-gradient-to-t from-forest-green to-forest-green-light" />
-    </nav>
-  );
-}
+      
 
+      {/* Safe area spacer for devices with home indicator */}
+
+      <div className="h-safe-area-inset-bottom" />
+
+    </nav>
+
+  );
+
+}
